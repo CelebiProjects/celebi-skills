@@ -1,0 +1,5 @@
+# Ignore packaged skill files (these are build artifacts)
+*.skill
+
+# Ignore debug insights
+DEBUGGING_INSIGHTS.md
