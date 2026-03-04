@@ -110,7 +110,7 @@ cd <task_name>
 | `celebi-cli set-mem` | `celebi-cli set-mem <memory>` | Set memory limit (e.g., 4Gi) |
 | `celebi-cli status` | `celebi-cli status` | Check task configuration and status |
 | `celebi-cli submit` | `celebi-cli submit` | Submit workflow for execution |
-| `celebi-cli error-log` | `celebi-cli error-log <index>` | View error logs for failed tasks |
+| `celebi-cli log` | `celebi-cli log <index>` | View logs for the step `<index>` of tasks |
 | `celebi-cli ls` | `celebi-cli ls` | List objects in current directory |
 | `celebi-cli tree` | `celebi-cli tree` | Visualize project hierarchy |
 

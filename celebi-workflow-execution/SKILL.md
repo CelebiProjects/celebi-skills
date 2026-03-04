@@ -21,9 +21,9 @@ This skill provides comprehensive guidance for executing and managing Celebi wor
 - `celebi-cli ls` – List dependencies and related tasks
 
 ### Monitoring & Debugging
-- `celebi-cli error-log <index>` – View error logs for failed tasks
-- `celebi-cli trace <task>` – Show execution logs and history
-- `celebi-cli history` – Display command history
+- `celebi-cli collect logs` – Get the latest execution logs for this task
+- `celebi-cli engine-logs` – View logs from the execution engine
+- `celebi-cli log <index>` – View error logs for failed tasks
 
 ## Quick Start
 
