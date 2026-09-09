@@ -1,138 +1,97 @@
 ---
 name: celebi-output-checker
-description: Retrieve, view, and analyze Celebi task outputs including logs, console output, and generated files. Use when the user wants to (1) Check task execution logs or stdout, (2) View or export output files (PNG, ROOT, etc.), (3) Verify task completion status and results, (4) Analyze fit results or histograms from physics analysis workflows.
+description: Inspect Celebi task logs and scientific results, collect selected runner outputs into Yuki, and retrieve files for local viewing or analysis.
 ---
 
-# Celebi Output Checker
+# Inspect Celebi results
 
-## Quick Start
-
-Check task results with these commands:
+Set the working directory to the intended task and establish the impression and
+execution state before interpreting results:
 
 ```bash
-# View console output/log
-cd <task_directory>
-celebi-cli log 0
-
-# Check task status
-cd <task_directory>
 celebi-cli status
-
-# Get view URL for browser
-cd <task_directory>
+celebi-cli log 0
+celebi-cli whereabouts
 celebi-cli viewurl
 ```
 
-## Viewing Logs
+`viewurl [IMPRESSION]` and `view [IMPRESSION]` accept an impression ID or unique short
+prefix; omit it for the current impression. Check that the displayed results belong
+to the intended run, especially after parameter/code edits.
 
-### Console Output (stdout)
+## Logs
+
+`celebi-cli log INDEX` reads a user command's combined stdout/stderr. The index is
+zero-based (`celebi_user_step0.log`, etc.), not a task ID or a history offset.
+Inspect later steps for failures after the first command. `log 0 --follow
+--poll-interval 5` polls until interrupted; use a bounded session and monitor status.
+
+Use `engine-logs` for workflow engine/orchestration logs and `engine-logs --fetch`
+for a fresh backend fetch. `collect-logs` requests logs into Yuki storage. A lack of
+user logs can mean the job never started; inspect engine logs and detailed status.
+
+## Collect retained outputs
+
+Collection copies files from a runner into **Yuki**, not the local task directory.
+
+| Command | Selection |
+|---------|-----------|
+| `celebi-cli collect` | Plots and logs (light default) |
+| `celebi-cli collect all` | All stageout outputs and logs |
+| `celebi-cli collect plots` | Plot files |
+| `celebi-cli collect data` | Data files |
+| `celebi-cli collect logs` | Logs |
+| `celebi-cli collect '*.root'` | Matching stageout files |
+| `celebi-cli collect-outputs` | All stageout outputs |
+
+Quote globs so the local shell does not expand them. Check skipped/failed entries;
+a successful job or collection request does not prove every requested file arrived.
+`refresh-filelists` refreshes runner listings, useful after terminal status froze a
+listing; it does not fetch result bytes. `whereabouts` distinguishes Yuki storage
+from runner caches. Do not infer missing results from absent local `stageout/`.
+
+## Download and view
+
+Get the actual page from `viewurl`, inspect its links, and download the selected
+file's resolved URL to a user-requested destination or temporary file. Do not assume
+localhost, port 3315, or construct an undocumented file-view route. For example,
+after resolving an actual link:
+
 ```bash
-cd <task_directory>
-celebi-cli log 0
+curl --fail --location "$file_url" --output "$destination"
 ```
 
-### Error Logs (if task failed)
-```bash
-cd <task_directory>
-celebi-cli log 0  # Usually same as stdout for errors
-```
+Use the available image viewer for raster plots or suitable ROOT/Python tools for
+scientific files. `celebi-cli imgcat` lists available images and `imgcat FILE` can
+display them in a compatible terminal. Fetching a web page alone does not verify
+that a downloaded artifact is valid; inspect the resulting file.
 
-### Collect Logs Locally
-```bash
-cd <task_directory>
-celebi-cli collect-logs
-```
+## Assess results and failures
 
-## Retrieving Output Files
+Verify expected files, dimensions/entries, fit convergence, uncertainties, and
+analysis-specific checks. Interpret chi-square with the degrees of freedom,
+uncertainty model, and residuals; fixed chi-square/NDF thresholds do not diagnose
+overfitting by themselves. Separate observed results from physical interpretation.
 
-### Step 1: Get View URL
-```bash
-cd <task_directory>
-celebi-cli viewurl
-```
+- Unknown `log` command: check installed CLI/version with `--help`; changing object
+  directory does not add a missing CLI command.
+- Empty page/404: check DITE connectivity, impression identity, and collection.
+  `view` opens a browser; it does not start Yuki.
+- Empty outputs: inspect job state, command logs, stageout path, selection filter,
+  and data locations before rerunning.
 
-### Step 2: Fetch Output Files
-Use `curl` to download files from the view URL:
+Source anchors: Celebi `CelebiChrono/kernel/vtask_job.py`; Yuki
+`Yuki/server/routes/status.py`, `Yuki/kernel/vjob.py`, and `file_types.py`.
 
-```bash
-# First, get the file paths from the view page
-curl -s <view_url> | grep -E "href=|src="
+## Check provenance and data completeness
 
-# Download specific files (e.g., PNG, ROOT)
-curl -s "http://127.0.0.1:3315/file-view/<path_to_file>" -o /tmp/output.png
-```
+When comparing runs, select the intended impression explicitly with `viewurl ID`
+and record its parameters alongside measured results. A view of the current task
+may change after an edit. Use `celebi-impression-management` for historical snapshots
+or archive exports when installed.
 
-### Step 3: View Downloaded Files
-```bash
-# For images
-open /tmp/output.png
-
-# For ROOT files, use ROOT
-cd /tmp
-root -l output.root
-```
-
-## Common Output Patterns
-
-### Physics Analysis Tasks
-
-**Generation Task Output:**
-```
-Generating 10000 events with Crystal Ball parameters:
-  Mass: 3.0969 GeV/c^2
-  Sigma: 0.05 GeV/c^2
-Generated 10000 events in 37568 attempts
-Output saved to: stageout/jpsi_distribution.root
-Tree entries: 10000
-Histogram mean: 3.0878 GeV/c^2
-```
-
-**Fit Task Output:**
-```
-==================================================
-Gaussian Fit Results
-==================================================
-Amplitude: 364.56 ± 4.82
-Mean:      3.0938 ± 0.0006 GeV/c²
-Sigma:     0.0523 ± 0.0004 GeV/c²
-Chi²/NDF:  313.34/69 = 4.54
-==================================================
-```
-
-## Analyzing Results
-
-### Check Fit Quality
-- **χ²/NDF ~ 1**: Good fit
-- **χ²/NDF > 3**: Poor fit (model may not describe data well)
-- **χ²/NDF < 0.5**: Overfitting or errors overestimated
-
-### Verify Outputs Exist
-```bash
-# Check if outputs were collected
-cd <task_directory>
-ls -la stageout/ 2>/dev/null || echo "No stageout yet - run collect-outputs"
-
-# Collect outputs
-cd <task_directory>
-celebi-cli collect-outputs
-```
-
-## Troubleshooting
-
-### "No such command 'log'"
-Make sure you're in a task directory (not algorithm directory).
-
-### View URL returns 404
-The local server may not be running. Try:
-```bash
-cd <task_directory>
-celebi-cli view
-```
-
-### Empty output files
-Check if task actually finished:
-```bash
-cd <task_directory>
-celebi-cli status
-```
-Look for `[coda][finished]` status.
+For unavailable bytes or a required cross-runner copy, use
+`celebi-data-management`. For HTTP/worker faults use `yuki-service-management`:
+`yuki server status` is currently a placeholder and does not prove the result
+service is healthy. Preserve the observed failure instead of assuming a browser
+error means the scientific task failed.

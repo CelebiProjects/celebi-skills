@@ -1,294 +1,84 @@
 ---
 name: celebi-algorithm-expert
-description: Creating or editing the algorithm using celebi system
+description: Create or edit reusable Celebi algorithm code and command templates, including parameter substitution, runtime paths, and retained outputs.
 ---
 
-# celebi-algorithm-expert Skill
+# Implement a Celebi algorithm
 
-You are **celebi-algorithm-expert**, a specialized agent for creating and modifying **Celebi algorithms**.
+Inspect the existing algorithm and its consuming tasks before changing their
+contract. Create an algorithm with `celebi-cli create-algorithm NAME` from a project
+or directory object. Edit its source and `celebi.yaml`; keep its README concise.
+Use Celebi commands for `.celebi` metadata changes.
 
-Your responsibility is to **implement algorithm code and configuration correctly inside the Celebi system**, following all rules strictly.
+## Commands and parameters
 
-You may create a new algorithm using:
-
-```
-celebi-cli create-algorithm <name>
-```
-
----
-
-# Core Responsibilities
-
-When working on an algorithm, you MUST:
-
-1. Create or edit source code
-2. Configure execution in `celebi.yaml`
-3. Ensure outputs are written to the correct location
-4. Follow ALL filesystem rules exactly
-
-Do not improvise directory structures.
-
----
-
-# Key Celebi Commands for Algorithms
-
-## Creating and Editing
-- `celebi-cli create-algorithm <name>` – Create a new algorithm directory
-- `celebi-cli edit <filename>` – Edit script files within the algorithm
-- Manual editing of `celebi.yaml` and source files
-
-## Configuration
-- Edit `celebi.yaml` directly to define environment, commands, and parameters
-
-## Linking to Tasks
-- `celebi-cli add-algorithm <path>` – Link this algorithm to a task (run from task directory)
-
-# What is an Algorithm
-
-An algorithm is a **self-contained directory** that includes:
-
-* source code
-* configuration (`celebi.yaml`)
-* metadata (`.celebi/config.json`) – automatically managed by Celebi commands
-* runtime logic
-
-At runtime:
-
-* the entire algorithm directory is mounted as `code/` inside the task
-
-Therefore:
-
-* files you place in the algorithm root will appear under `code/` during execution
-
----
-
-# Working Directory Rules (MANDATORY)
-
-Before editing or creating files:
-
-You MUST:
-
-```
-cd <algorithm_directory>
-```
-
-All file operations must occur inside this directory.
-
-Never write files outside it.
-
-No need to create test and requirements files since the system handles dependencies and testing.
-
-Write the README.md for documentation.
-Keep the README short and concise
-
----
-
-# File Placement Rules
-
-## Code
-
-Place all source files directly inside the algorithm directory.
-
-Example:
-
-```
-script.py
-utils.py
-model.py
-celebi.yaml
-README.md
-```
-
-## DO NOT
-
-❌ Do NOT create a `code/` directory
-❌ Do NOT nest files under `code/`
-❌ Do NOT create test scripts
-❌ Do NOT try to compile the code (for example using py_compile)
-
-Reason:
-The system automatically mounts the whole algorithm directory as `code/`.
-
-Creating your own `code/` would cause:
-
-```
-code/code/...
-```
-
-which breaks execution.
-
----
-
-# Output Rules (CRITICAL)
-
-All runtime outputs MUST be written to:
-
-```
-stageout/
-```
-
-Only files under `stageout/` are preserved for later stages.
-
-Anything written elsewhere may be lost.
-
-Always ensure your program saves results to:
-
-```
-stageout/<filename>
-```
-
----
-
-# Configuration Rules
-
-Every algorithm MUST define execution behavior in:
-
-```
-celebi.yaml
-```
-
-## Required format
-
-Example:
+A minimal reusable template is:
 
 ```yaml
 environment: script
 commands:
-  - python code/script.py ${para1} ${para2}
+  - python code/analyze.py --events "${events}" --output stageout/results.root
 ```
 
-**Typical algorithm configuration:**
+`script` on an algorithm allows the consuming task to choose its environment.
+For an algorithm declaring a concrete environment, the client's validation requires
+the task's environment to match it. Set the actual execution environment on the
+task; linking an algorithm does not automatically copy it.
+
+The executor substitutes values from the **task's** `parameters` mapping. Set every
+required value there, normally with `celebi-cli add-parameter events 10000`. When
+editing YAML directly, quote parameter values as strings: Yuki's substitution uses
+string replacement without coercing numbers. Algorithm `parameters` are not
+implicitly merged into the task.
+
+Commands are shell strings. Quote values according to their intended shell usage;
+substitution is textual, not argument escaping. Do not reuse parameter names for
+reserved path placeholders (`code`, `workspace`, `output`) or input aliases.
+
+## Runtime filesystem
+
+For an algorithm-backed task, the algorithm directory is linked as `code/`.
+`analyze.py` in the algorithm root is therefore `code/analyze.py`. A package or
+source subdirectory is valid if commands use its real relative path. Do not add a
+wrapper `code/` directory just to match the runtime link.
+
+Retained results belong in `stageout/`; temporary intermediates may live elsewhere
+in the workspace. Keep input data read-only and access it through declared aliases.
+For example:
 
 ```yaml
-environment: rootproject/root:6.32.02-ubuntu22.04
-memory_limit: 4Gi
-parameters:
-  events: "10000"
-  input_file: "data.root"
+environment: script
 commands:
-  - root -b -q 'code/analysis.C(${events}, "${input_file}", "stageout/results.root")'
+  - python code/analyze.py --input "inputdata/${input_file}" --output stageout/results.root
 ```
 
-### Notes
+Here the task supplies `input_file: "stageout/data.root"`. If the command instead
+uses `${input_file}` directly, the parameter must contain the full runtime path.
+The path contract depends on the command; avoid prepending the alias twice.
 
-* `code/` refers to the mounted algorithm directory at runtime
-* `${paraX}` are parameters passed from the task (can have default values in algorithm)
-* Do NOT hardcode task parameters - use placeholders
-* `environment` specifies the container image or script environment
-* `memory_limit` sets memory allocation (optional)
-* `parameters` section defines default values that can be overridden by tasks
+## Integration and validation
 
----
+From a consuming task, link with `celebi-cli add-algorithm @/algorithms/analyze`,
+configure parameters/environment, then inspect `celebi-cli ls` and `status`.
+A task's non-empty `commands` override the algorithm's commands; check for those
+before diagnosing why algorithm edits have no effect.
 
-# Inputs
+Use syntax checks and focused tests where they meaningfully validate the change.
+Celebi does not automatically test scientific logic or install arbitrary package
+dependencies. Validate execution in the intended runner/environment when execution
+is in scope, and inspect outputs before claiming the analysis succeeded.
 
-During execution:
+For inline task code, use `celebi-task-expert` if available: client test/workaround
+mounts and the current Yuki runtime do not have identical inline code-path behavior.
+Source anchors: Celebi `kernel/vtask_setting.py`, `vtask.py` under
+`CelebiChrono/`, and Yuki `Yuki/kernel/container_job.py`.
 
-* task inputs are mounted into a directory alias defined by the task
+## Preserve reproducibility across consumers
 
-Example:
-
-```
-inputdata/stageout/file.root
-```
-
-You MUST:
-
-* read inputs only from the provided mounted path
-* not assume absolute paths
-* not modify input files
-
----
-
-# Path Handling and Algorithm-Task Contract
-
-## Path Convention for Input Files
-
-When tasks use `celebi-cli add-input <task_path> <alias>` to define dependencies:
-
-**Task Configuration**:
-- Parameters should specify paths **relative to the alias mount point**
-- Example: If alias is `inputdata` and file is at `stageout/data.root`:
-  - Task parameter: `data_file: stageout/data.root`
-
-**Algorithm Implementation**:
-- Construct full paths using the alias prefix
-- Example in Python: `input_path = f"{alias}/{data_file}"`
-- Example in algorithm code: `input_path = f"inputdata/{data_file}"`
-
-**Common Pitfall**: Avoid path duplication
-- ❌ **Wrong**: Task parameter `input_file: inputdata/stageout/file.root` + Algorithm `f"inputdata/{input_file}"`
-- ✅ **Correct**: Task parameter `input_file: stageout/file.root` + Algorithm `f"inputdata/{input_file}"`
-
-## Algorithm-Task Parameter Contract
-
-**Clear Separation of Responsibilities**:
-- **Algorithm**: Defines `parameters` with defaults in `celebi.yaml`
-- **Task**: Overrides defaults via `celebi-cli add-parameter`
-- **Validation**: Test algorithm independently before task integration
-
-**Parameter Flow**:
-```
-Algorithm celebi.yaml → Task overrides → Runtime substitution → Algorithm execution
-```
-
-**Best Practice**: Algorithms should validate parameter existence and handle missing inputs gracefully.
-
----
-
-# Behavioral Constraints (STRICT)
-
-You MUST:
-
-✅ work only inside the algorithm directory
-✅ save outputs to `stageout/`
-✅ configure `celebi.yaml` correctly
-✅ use relative paths
-
-You MUST NOT:
-
-❌ create `code/`
-❌ write outside the algorithm directory
-❌ write outputs outside `stageout/`
-❌ hardcode task-specific paths
-❌ write files in `.celebi/` directories
-
----
-
-# Execution Mindset
-
-When implementing:
-
-1. cd into algorithm directory
-2. create/update source files
-3. ensure outputs → `stageout/`
-4. edit `celebi.yaml`
-5. verify paths assume runtime mount as `code/`
-
----
-
-# Related Skills
-
-For comprehensive Celebi project support, also consider these complementary skills:
-
-- **celebi-navigation**: Explore project structure with `celebi-cli tree` and `celebi-cli ls`
-- **celebi-object-creation**: Create tasks, algorithms, and directories using `celebi-cli create-*` commands
-- **celebi-workflow-execution**: Execute workflows with `celebi-cli submit` and manage dependencies
-- **celebi-task-expert**: Configure and orchestrate Celebi tasks
-- **celebi-amend-expert**: Diagnose and debug existing Celebi components
-- **celebi-output-checker**: View task outputs, logs, and download result files after execution
-
-# Skill Invocation Instructions
-
-When working as `celebi-algorithm-expert`, follow these instructions for invoking other Celebi skills:
-
-1. **Creating tasks**: If the user needs to create a task that uses this algorithm, **invoke the `/celebi-task-expert` skill** to configure and orchestrate the task.
-2. **Debugging algorithms**: If the algorithm has configuration errors or runtime failures, **invoke the `/celebi-amend-expert` skill** for diagnosis and repair.
-3. **Exploring project structure**: If you need to understand the project hierarchy or locate related objects, **invoke the `/celebi-navigation` skill**.
-4. **Creating other objects**: If the user needs to create additional algorithms, tasks, or directories, **invoke the `/celebi-object-creation` skill**.
-5. **Executing workflows**: Once tasks are configured, **invoke the `/celebi-workflow-execution` skill** for submission and monitoring.
-6. **Viewing outputs and results**: After tasks complete, if the user needs to view outputs, logs, or download results, **invoke the `/celebi-output-checker` skill**.
-
-**Important**: Always use the Skill tool to invoke these skills. Do not proceed with manual fixes when specialized skills exist.
-
----
+Inspect `celebi-cli successors` before changing a shared algorithm's interface.
+Keep existing parameter/input conventions compatible, or update the affected tasks
+within the requested scope and report that change. Source edits may create new
+impressions for multiple consumers; do not submit all of them merely to test one.
+Validate with a representative intended task and its actual environment when a run
+is requested. Use `celebi-runner-management` for unavailable environments and
+`celebi-impression-management` for snapshot/provenance questions if installed.

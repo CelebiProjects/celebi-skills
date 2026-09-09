@@ -1,6 +1,7 @@
 # Celebi Skills
 
-A collection of Claude Code skills for the Celebi physics analysis workflow system.
+A collection of agent skills for the Celebi physics analysis workflow system and
+its Yuki execution and data service.
 
 ## Available Skills
 
@@ -15,6 +16,10 @@ A collection of Claude Code skills for the Celebi physics analysis workflow syst
 | `celebi-task-expert` | Configure and orchestrate tasks |
 | `celebi-amend-expert` | Debug and fix existing components |
 | `celebi-output-checker` | View logs and retrieve output files (PNG, ROOT, etc.) |
+| `celebi-runner-management` | Configure runners, environment mappings, and REANA booking |
+| `celebi-data-management` | Register, verify, locate, and transfer data |
+| `celebi-impression-management` | Inspect provenance, migrate/archive impressions, and scope cleanup |
+| `yuki-service-management` | Deploy and diagnose Yuki, Celery, RabbitMQ, and storage |
 
 ## Installation
 
@@ -33,6 +38,10 @@ npx skills add CelebiProjects/celebi-skills@celebi-algorithm-expert
 npx skills add CelebiProjects/celebi-skills@celebi-task-expert
 npx skills add CelebiProjects/celebi-skills@celebi-amend-expert
 npx skills add CelebiProjects/celebi-skills@celebi-output-checker
+npx skills add CelebiProjects/celebi-skills@celebi-runner-management
+npx skills add CelebiProjects/celebi-skills@celebi-data-management
+npx skills add CelebiProjects/celebi-skills@celebi-impression-management
+npx skills add CelebiProjects/celebi-skills@yuki-service-management
 ```
 
 Or install all skills at once:
@@ -49,9 +58,11 @@ Celebi is a workflow-driven analysis management framework designed for high-ener
 ### Core Concepts
 
 - **Project**: The root container and top-level namespace
-- **Directory**: Organizational units for grouping objects
+- **Directory**: Organizational units for grouping objects, including nested directories
 - **Algorithm**: Stateless, reusable template for computation ("The How")
-- **Task**: Executable instance of an algorithm ("The What")
+- **Task**: Execution context using a linked algorithm or its own inline commands
+- **Data**: A task flavor representing raw data or a data list
+- **Yuki**: Service coordinating runners, logs, result collection, and data caches
 
 ### Quick Start
 
@@ -69,9 +80,26 @@ celebi-cli add-algorithm ../my-algorithm
 # Set parameters
 celebi-cli add-parameter events 10000
 
-# Submit for execution
-celebi-cli submit
+# Define commands/source in my-algorithm and configure the task environment first.
+# Submit to the runner requested by this task (the argument is a runner name).
+celebi-cli request-runner local
+celebi-cli submit local
+celebi-cli status
+celebi-cli log 0
+
+# Collect plots into Yuki storage and get the result-view URL
+celebi-cli collect plots
+celebi-cli viewurl
 ```
+
+The skills reflect the local Celebi and Yuki source trees reviewed on 2026-09-09,
+including their uncommitted changes. The master folder retains its existing skill
+name `celebi`; the other skill names match their folders. Companion skills are
+optional and can be installed individually. Check the installed CLI's command-specific
+help when working against an older deployment. The task skill documents the
+current inline-code path differences between client tests and Yuki execution.
+The service and impression skills also distinguish implemented behavior from
+placeholder server status and packing commands.
 
 ## License
 

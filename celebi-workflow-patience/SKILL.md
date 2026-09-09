@@ -1,181 +1,73 @@
 ---
 name: celebi-workflow-patience
-description: Use when working with Celebi physics analysis workflows to prevent common mistakes like premature debugging, configuration reversion, and inefficient command usage
+description: Assess slow or apparently stalled Celebi workflows using progress evidence while avoiding unnecessary resubmission, restarts, or configuration changes.
 ---
 
-# Celebi Workflow Patience Skill
+# Monitor a slow workflow
 
-## Overview
+A running state is a reason to inspect progress, not evidence of either failure or
+health. Preserve the user's configuration choices while collecting evidence.
+Elapsed time alone does not justify restarting a long analysis.
 
-**Core Principle**: When working with Celebi physics analysis workflows, practice patience and trust in the system. Celebi manages complex dependency graphs and execution states - premature intervention often causes more problems than it solves.
-
-## When to Use This Skill
-
-Trigger this skill when you encounter any of these situations:
-
-1. **Task shows `[running]` status** - This is normal operation, not an error
-2. **User provides specific directory guidance** (e.g., "inputs should be in stageout directory")
-3. **Working with Celebi configuration files** (`celebi.yaml`, `config.yaml`, etc.)
-4. **User mentions Celebi workflow patterns** or physics analysis pipelines
-5. **Encountering apparent "stalls" or "hangs"** in workflow execution
-
-## Common Mistakes Table (Based on Real Experience)
-
-| Failure Mode | Symptom | Root Cause | Solution |
-|--------------|---------|------------|----------|
-| **Configuration Reversion** | User says "inputs should be in stageout directory" but agent changes config back to default | Not trusting user's specific guidance | Maintain user's configuration guidance throughout execution |
-| **Premature Debugging** | Agent tries to debug when task shows `[running]` status | Misinterpreting normal operation as error | Monitor, don't debug when status is `[running]` |
-| **Inefficient Command Usage** | Using complex bash pipes instead of standard `celebi-cli` commands | Not leveraging Celebi's built-in utilities | Use standard command patterns: `celebi-cli status`, `celebi-cli logs`, etc. |
-| **Modifying Configuration During Execution** | Changing config while task is running | Trying to "fix" a system that's working correctly | Never modify configuration while task is running |
-
-## Rules for Each Failure Mode
-
-### Rule 1: Maintain User Configuration Guidance
-- **When**: User provides specific directory or configuration guidance
-- **Do**: Preserve and use their guidance throughout the workflow
-- **Don't**: Revert to defaults or "standard" patterns without explicit permission
-- **Example**: If user says "inputs should be in stageout directory", keep inputs in stageout directory
-
-### Rule 2: Trust `[running]` Status
-- **When**: Task shows `[running]` status
-- **Do**: Monitor progress with `celebi-cli status` and `celebi-cli logs`
-- **Don't**: Attempt debugging, configuration changes, or restart attempts
-- **Wait Time**: Minimum 2-3 minutes before considering any intervention
-
-### Rule 3: Use Standard Command Patterns
-- **Preferred**: `celebi-cli status` - Check workflow status
-- **Preferred**: `celebi-cli logs <task_id>` - View task logs
-- **Preferred**: `celebi-cli list` - List all tasks
-- **Avoid**: Complex bash pipes (`grep`, `awk`, `sed`) when Celebi commands exist
-- **Avoid**: Manual file inspection when `celebi-cli` provides the information
-
-### Rule 4: Never Modify Running Configuration
-- **When**: Any task is in `[running]` state
-- **Do**: Monitor and wait for completion or failure
-- **Don't**: Edit `celebi.yaml`, `config.yaml`, or any configuration files
-- **Exception**: Only if user explicitly requests configuration changes
-
-## Command Patterns Reference
-
-### Efficient Monitoring Commands
 ```bash
-# Basic status check
 celebi-cli status
-
-# Detailed task status
-celebi-cli status --verbose
-
-# View logs for specific task
-celebi-cli logs <task_id>
-
-# Follow logs in real-time
-celebi-cli logs <task_id> --follow
-
-# List all tasks with states
-celebi-cli list --all
+celebi-cli log 0
+celebi-cli engine-logs
 ```
 
-### Configuration Commands (Use Only When NOT Running)
-```bash
-# Validate configuration
-celebi-cli validate
+These operate on the current object. Use `predecessors` for dependencies and `ls`
+for effective commands. The CLI uses singular `log` and `submit`; use the installed
+`--help` instead of inventing `logs`, `run`, `validate`, or `deps` commands.
 
-# Dry run (no execution)
-celebi-cli run --dry-run
+## Decide from evidence
 
-# Check dependencies
-celebi-cli deps
-```
+- `in movement`/`running` with advancing logs: continue monitoring at an interval
+  appropriate to job duration. Avoid tight polling and keep the user informed.
+- `prelude`/`waiting` or construction stages: inspect detailed status, upstream
+  jobs, and runner availability. Empty user logs may be normal before execution.
+- Running with no progress beyond the expected workload: read engine logs, inspect
+  runner health, and compare successive observations. Read-only diagnosis is
+  appropriate while running; do not blindly trust a stale status.
+- `dissonance`/`failed`: diagnose construction versus execution failure before
+  editing. A downstream failed job may have been skipped after upstream failure.
+- `coda`/`finished`: verify retained outputs. Success does not imply the desired
+  file selection is already collected into Yuki.
 
-## Red Flags (Rationalizations to Watch For)
+Native/SSH backends use per-job `.done` markers for success. Unfinished jobs can
+remain unchanged while the workflow is active, then receive failure/skip details
+when it terminates. SSH supervision also checks startup/exit markers and process
+liveness. Do not hand-create markers or edit status files to force progress.
 
-1. **"It's taking too long"** → Celebi workflows often take minutes to hours
-2. **"Maybe I should check the files manually"** → Use `celebi-cli logs` instead
-3. **"The configuration might be wrong"** → Trust the running state
-4. **"Let me restart it"** → This breaks dependency tracking
-5. **"I'll use grep/awk to parse the output"** → Use `celebi-cli` commands instead
+## Bound monitoring and interventions
 
-## Workflow Decision Diagram
+`log INDEX --follow --poll-interval 5` runs until interrupted; it does not stop on
+job completion. Keep follow sessions manageable, check status separately, and
+report what changed or what evidence is missing. No universal two-minute waiting
+period makes a restart correct.
 
-```
-Start Celebi Workflow
-        ↓
-celebi-cli run
-        ↓
-Check Status → [failed] → celebi-cli logs → Debug with user guidance
-        ↓
-     [running] → Wait 2-3 minutes → celebi-cli status
-        ↓                               ↓
-    [success] ←--------------------- Still [running]?
-        ↓
-    Continue to
-    next analysis step
-```
+Avoid resubmitting or changing the desired configuration merely because execution
+is slow. An intentional edit creates new desired state and may leave an older
+impression running; identify which run is being observed. If cancellation is within
+the user's request, target the known workflow ID and confirm the resulting state
+before another submission.
 
-## Testing This Skill (TDD Approach)
+A timeout from registration, transfer, or submission may leave server work active.
+Inspect job/impression state before retrying a mutation. Repeated connection failures
+are a reason to diagnose connectivity and report uncertainty, not to launch copies.
 
-### RED Phase Tests (Known Failures)
-1. **Test**: User says "inputs in stageout directory" → agent maintains this
-2. **Test**: `[running]` status → agent monitors, doesn't debug
-3. **Test**: Uses `celebi-cli` commands instead of bash pipes
-4. **Test**: Doesn't modify config during execution
+Use `celebi-amend-expert` for a diagnosed failure and `celebi-output-checker` for
+result verification when available. Source anchors: Yuki
+`Yuki/kernel/native_workflow.py`, `ssh_workflow.py`, `status_constants.py`, and
+`Yuki/server/routes/status.py`.
 
-### GREEN Phase Implementation
-This skill document represents the minimal implementation to pass the above tests.
+## Escalate to the relevant layer
 
-### REFACTOR Phase Considerations
-- Add more specific Celebi workflow patterns
-- Include common physics analysis pipeline examples
-- Add troubleshooting flowcharts for specific error types
+Keep successive observations associated with the same impression/workflow. Changing
+configuration while watching a task can otherwise make an older execution appear
+to have disappeared. Include the last observed status and concrete log progress
+when reporting a stall.
 
-## Integration with Other Celebi Skills
-
-This skill complements and integrates with:
-
-### `celebi-workflow-execution`
-- **This skill**: Focuses on patience, monitoring, and avoiding premature intervention
-- **Workflow execution**: Focuses on submission, dependency resolution, and execution patterns
-- **Use together**: Execute workflows with patience, monitor without premature debugging
-
-### `celebi-master`
-- **This skill**: Specific behavioral patterns for workflow patience
-- **Master skill**: Comprehensive system overview and routing to specialized skills
-- **Use together**: Get overview from master, apply patience patterns from this skill
-
-### `celebi-task-expert`
-- **This skill**: Behavioral guidance during execution
-- **Task expert**: Task configuration and orchestration
-- **Use together**: Configure tasks properly, then execute with patience
-
-## Common User Requests
-
-This skill should be used when users ask or encounter:
-- "Why is my task taking so long?" (Answer: Monitor, don't debug)
-- "Should I check the configuration?" (Answer: Not while running)
-- "The task seems stuck" (Answer: Wait 2-3 minutes, then check status)
-- "Let me restart it" (Answer: This breaks dependency tracking)
-- "I'll modify the config to fix it" (Answer: Never modify during execution)
-
-## Skill Invocation Instructions
-
-When working as `celebi-workflow-patience`, follow these instructions for invoking other Celebi skills:
-
-1. **Executing workflows**: When tasks are ready for submission after patient monitoring, **invoke the `/celebi-workflow-execution` skill** for submission and monitoring.
-2. **Configuring tasks**: If patient monitoring reveals configuration issues that need fixing (after tasks have stopped), **invoke the `/celebi-task-expert` skill**.
-3. **Creating algorithms**: If patient monitoring reveals algorithm issues that need fixing (after tasks have stopped), **invoke the `/celebi-algorithm-expert` skill**.
-4. **Debugging failures**: If tasks fail and need diagnosis after patient monitoring, **invoke the `/celebi-amend-expert` skill**.
-5. **Exploring project structure**: If you need to understand dependencies or project hierarchy, **invoke the `/celebi-navigation` skill**.
-6. **Creating objects**: If patient monitoring reveals a need for new objects, **invoke the `/celebi-object-creation` skill**.
-7. **Viewing outputs and results**: After tasks complete, if the user needs to view outputs, logs, or download results, **invoke the `/celebi-output-checker` skill**.
-
-**Important**: Always use the Skill tool to invoke these skills. Do not proceed with manual fixes when specialized skills exist.
-
-## References
-
-For detailed information about Celebi workflow execution, see:
-- `celebi-workflow-execution` - Workflow submission and monitoring
-- `celebi-master` - Comprehensive system overview
-- `celebi-task-expert` - Task configuration and orchestration
-
----
-*Skill created based on TDD approach from real failure experiences in Celebi workflow management*
+Use `celebi-runner-management` for runner probes, `yuki-service-management` for
+web/worker/broker health, and `celebi-data-management` for a stalled registration or
+transfer when installed. Followed logs are not an independent heartbeat, and the
+current `yuki server status` implementation is not a real health probe.

@@ -1,129 +1,92 @@
 ---
 name: celebi-amend-expert
-description: Expert agent for diagnosing, debugging, and amending existing Celebi tasks and algorithms. Specializes in fixing configuration errors, broken paths, parameter mismatches, and runtime failures while strictly complying with Celebi YAML and filesystem rules.
+description: Diagnose and repair existing Celebi tasks and algorithms using configuration, provenance, command logs, Yuki engine status, and data-location evidence.
 ---
 
-# celebi-amend-expert
+# Repair an existing Celebi workflow
 
-You are **celebi-amend-expert**, the dedicated debugging and repair authority for the Celebi system.
+Identify the task, impression, requested runner, and reported symptom. Inspect
+before modifying source or configuration:
 
-Your mission is **not to create new tasks**, but to **inspect, diagnose, and correct existing Celebi tasks and algorithms** so they execute successfully and conform strictly to Celebi standards.
+```bash
+celebi-cli status
+celebi-cli ls
+celebi-cli predecessors
+celebi-cli log 0
+celebi-cli engine-logs
+celebi-cli whereabouts
+```
 
-You fix:
-- broken scripts
-- incorrect parameters
-- misconfigured `celebi.yaml`
-- wrong paths or aliases
-- missing stageout outputs
-- runtime and environment errors
+Inspect the log index corresponding to the failed user command, not only step zero.
+Use `engine-logs --fetch` for a fresh backend view. `changes` and `history` help
+identify edits; `trace IMPRESSION_ID` compares DAG provenance, not execution logs.
+Read `.celebi/config.json` and local configuration when useful, but change managed
+metadata and dependency edges through Celebi commands.
 
-You never redesign or restructure unless necessary for correctness.
+## Diagnose the layer
 
----
+| Evidence | Check and repair |
+|----------|------------------|
+| Runner mismatch before execution | Inspect `runners` and requested runner; use `request-runner NAME` and `submit NAME` consistently |
+| `dissonance` or no user logs | Inspect engine logs, workflow construction, environment mapping, input staging, and connectivity |
+| `failed` with user traceback | Repair the indicated command/code/parameter issue |
+| Failed downstream task with skip detail | Fix the upstream failure first; the downstream code may never have run |
+| Algorithm changes appear ignored | Non-empty task commands override linked algorithm commands |
+| Unsubstituted placeholder or type error | Define the value in task `parameters`; quote YAML values as strings |
+| `code/code/...` or missing source | Match paths to the real source tree and runtime code link |
+| Inline source missing at `code/...` | Check client versus Yuki path behavior; Yuki's code link still uses the linked algorithm |
+| Duplicated input alias in path | Determine whether the command or parameter supplies the alias, and include it once |
+| Completed job with absent local outputs | Check `whereabouts`, runner listings, and collection selection; outputs are remote |
 
-# Available Tools
+## Non-obvious configuration checks
 
-You may use:
+- Task commands override algorithm commands; empty/absent task commands fall back.
+  Inline task environment must be non-empty. Without inline commands, a concrete
+  algorithm environment must match the task; algorithm `script` permits a choice.
+- Task parameter substitution does not merge algorithm defaults. Define required
+  values in the task and inspect the rendered command with `ls`.
+- `add-algorithm PATH` replaces the linked algorithm. For input rewiring, inspect
+  the alias first and use `remove-input ALIAS` / `add-input PATH ALIAS` as needed;
+  do not assume adding a duplicate alias silently replaces it.
+- A source subdirectory is not intrinsically illegal; ensure command paths match.
+  Avoid creating an extra `code/` wrapper to imitate the runtime mount.
+- Native/SSH runners resolve environment strings through Yuki's conda mapping.
+  Check `runner-envs RUNNER`, `test-runner RUNNER`, and server mappings before
+  changing the scientific environment to an arbitrary image.
 
-## Inspection Commands
-- `celebi-cli status` → check task/algorithm execution state
-- `celebi-cli ls` → list dependencies and related tasks
-- `celebi-cli tree` → visualize project hierarchy and dependencies
-- `celebi-cli error-log <index>` → inspect failure logs
-- `celebi-cli trace <task>` → show execution logs and history
-- `celebi-cli history` → display command history
-- `celebi-cli changes` → show recent changes
+For backend status inconsistencies, compare detailed job status with workflow
+state. Native/SSH `.done` markers indicate completion; terminal workflows classify
+remaining jobs as failed or skipped. Do not manually change status files. If server
+storage paths disagree, inspect the service's configured `YUKIDIR` and process
+home; do not assume storage is on the client machine.
 
-## Modification Commands (use cautiously)
-If you need to change the algorithm or dependencies after diagnosis:
-- `celebi-cli add-algorithm` → add a new algorithm (replace existing)
-- `celebi-cli add-input` → add a new dependency (replace existing)
-- `celebi-cli add-parameter` → add or modify parameters
-- `celebi-cli set-env` → change execution environment
-- `celebi-cli set-mem` → adjust memory limit
+## Apply and verify
 
-Always inspect status and logs **before making changes**.
+Make the smallest change supported by the evidence, preserving user configuration
+and unrelated work. Edit code/YAML in the owning object, use CLI operations for
+links and settings, and inspect `changes`, `ls`, and `status` afterward. Run focused
+syntax or logic checks where useful. If rerunning is within scope, submit from the
+affected task with its requested runner, inspect the relevant logs, and verify the
+expected stageout artifacts and scientific result.
 
----
+A stale listing can be refreshed with `refresh-filelists`; selected files can be
+collected with `collect '*.root'`. Neither operation requires changing the algorithm.
+Do not delete caches, purge impressions, or restart active workflows as a generic
+repair. A client timeout does not establish that the server job stopped.
 
-# Core Responsibilities
+Use `celebi-algorithm-expert`, `celebi-task-expert`, or `celebi-output-checker` for
+the relevant work when installed. Source anchors: Celebi
+`CelebiChrono/kernel/vtask_setting.py`, `vtask_input.py`, `vobj_execution.py`, and
+Yuki `Yuki/kernel/container_job.py`, `native_workflow.py`, `ssh_workflow.py`.
 
-## 1. Diagnosis First
-- Identify failure cause before editing anything
-- Use logs and dependency inspection
-- Prefer minimal, targeted fixes
+## Repair the owning layer
 
-## 2. Configuration Repair
-- Correct `celebi.yaml`
-- Ensure parameters use `${parameter}`
-- Validate environment + memory
-- Ensure alias usage is correct
+Route unavailable runners/environments to `celebi-runner-management`, registration
+or staging failures to `celebi-data-management`, and web/worker/storage-root failures
+to `yuki-service-management` when installed. In particular, do not trust the current
+placeholder `yuki server status` as evidence that both Flask and Celery work.
 
-## 3. Filesystem Integrity
-- Respect Celebi runtime mount rules
-- Preserve task structure
-- Never introduce illegal directories
-- Never write files in `.celebi/` directories
-
-## 4. Execution Reliability
-After fixes, the task must:
-- start without path errors
-- find all inputs via aliases
-- write results to `stageout/`
-- run deterministically
-
-Always use the skill: celebi-algorithm-expert for algorithm logic fixes.
-and celebi-task-expert for task structure fixes.
-
----
-
-# Common Error Patterns
-
-## Path Errors
-- **Symptom**: "File not found" or "No such file or directory"
-- **Cause**: Incorrect `code/` directory usage or wrong alias paths
-- **Fix**: Ensure no `code/` subdirectory exists; verify alias paths reference correct task stageout
-
-## Parameter Mismatch
-- **Symptom**: Placeholder `${parameter}` not replaced or wrong value
-- **Cause**: Missing parameter definition in task `celebi.yaml`
-- **Fix**: Use `celebi-cli add-parameter` to define parameters
-
-## Missing Stageout Outputs
-- **Symptom**: Task runs but no outputs preserved
-- **Cause**: Outputs written outside `stageout/` directory
-- **Fix**: Modify algorithm to write files to `stageout/` path
-
-## Dependency Failures
-- **Symptom**: Dependent task not executed or missing inputs
-- **Cause**: Missing `celebi-cli add-input` or incorrect alias
-- **Fix**: Verify dependencies with `celebi-cli ls` and add missing inputs
-
----
-
-# Related Skills
-
-For comprehensive Celebi project support, also consider these complementary skills:
-
-- **celebi-navigation**: Explore project structure with `celebi-cli tree` and `celebi-cli ls`
-- **celebi-object-creation**: Create tasks, algorithms, and directories using `celebi-cli create-*` commands
-- **celebi-workflow-execution**: Execute workflows with `celebi-cli submit` and manage dependencies
-- **celebi-algorithm-expert**: Create and modify Celebi algorithms
-- **celebi-task-expert**: Configure and orchestrate Celebi tasks
-- **celebi-output-checker**: View task outputs, logs, and download result files after execution
-
-# Skill Invocation Instructions
-
-When working as `celebi-amend-expert`, follow these instructions for invoking other Celebi skills:
-
-1. **Fixing algorithm logic**: If the issue is in algorithm implementation or configuration, **invoke the `/celebi-algorithm-expert` skill** for algorithm fixes.
-2. **Fixing task orchestration**: If the issue is in task configuration or dependencies, **invoke the `/celebi-task-expert` skill** for task fixes.
-3. **Exploring project structure**: If you need to understand the project hierarchy or locate related objects, **invoke the `/celebi-navigation` skill**.
-4. **Creating new objects**: If the fix requires creating new algorithms, tasks, or directories, **invoke the `/celebi-object-creation` skill**.
-5. **Executing workflows**: Once fixes are applied, **invoke the `/celebi-workflow-execution` skill** for submission and monitoring.
-6. **Maintaining patience during execution**: If tasks are running and need monitoring without premature debugging, **invoke the `/celebi-workflow-patience` skill**.
-7. **Viewing outputs and results**: After tasks complete, if the user needs to view outputs, logs, or download results, **invoke the `/celebi-output-checker` skill**.
-
-**Important**: Always use the Skill tool to invoke these skills. Do not proceed with manual fixes when specialized skills exist.
-
----
+For missing historical results or requested cleanup, use
+`celebi-impression-management`. Its liveness and retention rules are separate from
+scientific validity. Preserve a useful failing impression and diagnostic evidence
+before a repair changes the current desired state.
