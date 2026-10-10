@@ -18,7 +18,7 @@ celebi-cli history
 celebi-cli changes
 celebi-cli search-impression PREFIX
 celebi-cli trace IMPRESSION_ID
-celebi-cli stats-impressions
+celebi-cli impression-stats
 ```
 
 `trace` compares current DAG state with a stored impression. `impress` creates or
@@ -78,7 +78,7 @@ be broader than the computed live set.
 celebi-cli sync-live
 celebi-cli purge-stale-cache RUNNER --dry-run
 celebi-cli purge-stale-workflows RUNNER --dry-run
-celebi-cli kill-running-workflows RUNNER --dry-run
+celebi-cli stop-orphaned-workflows RUNNER --dry-run
 ```
 
 Review the relevant preview, current execution, and needed copies before executing
@@ -89,8 +89,8 @@ a dry run. Do not discard previews or bypass protections to reclaim space quickl
 |-----------|-------|
 | `purge-stale-cache` | Superseded managed runner cache entries |
 | `purge-stale-workflows` | Non-live, non-running runner workspaces; retains local workflow mirror |
-| `kill-running-workflows` | Unreferenced workflows recorded running in this project; retains workspaces |
-| `kill-workflow WORKFLOW_UUID` | Explicit individual workflow cancellation, including zombie runs |
+| `stop-orphaned-workflows` | Unreferenced workflows recorded running in this project; retains workspaces |
+| `stop-workflow WORKFLOW_UUID` | Explicit individual workflow cancellation, including zombie runs |
 | `purge-data` | Current impression's collected Yuki files; normally refuses without a runner copy |
 | `purge-ssh-runner-cache` | Broader SSH cache deletion, optionally scoped by project/impression |
 

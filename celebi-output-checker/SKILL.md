@@ -12,10 +12,10 @@ execution state before interpreting results:
 celebi-cli status
 celebi-cli log 0
 celebi-cli whereabouts
-celebi-cli viewurl
+celebi-cli view-url
 ```
 
-`viewurl [IMPRESSION]` and `view [IMPRESSION]` accept an impression ID or unique short
+`view-url [IMPRESSION]` and `view [IMPRESSION]` accept an impression ID or unique short
 prefix; omit it for the current impression. Check that the displayed results belong
 to the intended run, especially after parameter/code edits.
 
@@ -52,7 +52,7 @@ from runner caches. Do not infer missing results from absent local `stageout/`.
 
 ## Download and view
 
-Get the actual page from `viewurl`, inspect its links, and download the selected
+Get the actual page from `view-url`, inspect its links, and download the selected
 file's resolved URL to a user-requested destination or temporary file. Do not assume
 localhost, port 3315, or construct an undocumented file-view route. For example,
 after resolving an actual link:
@@ -85,7 +85,7 @@ Source anchors: Celebi `CelebiChrono/kernel/vtask_job.py`; Yuki
 
 ## Check provenance and data completeness
 
-When comparing runs, select the intended impression explicitly with `viewurl ID`
+When comparing runs, select the intended impression explicitly with `view-url ID`
 and record its parameters alongside measured results. A view of the current task
 may change after an edit. Use `celebi-impression-management` for historical snapshots
 or archive exports when installed.

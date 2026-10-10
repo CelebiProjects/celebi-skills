@@ -2,7 +2,7 @@
 
 Use booking when the user wants to publish a Celebi project file catalog through
 Yuki. It creates remote state and uploads selected content; it is not an alias for
-`submit RUNNER` and is not a necessary step for every REANA analysis.
+`submit --runner RUNNER` and is not a necessary step for every REANA analysis.
 
 From the intended project, inspect `celebi-cli booking-server`. Existing stored
 booking credentials may suffice. `celebi-cli register-booking-server --server URL`

@@ -32,7 +32,7 @@ celebi-cli create-algorithm analyze
 celebi-cli create-task analysis
 cd analysis
 celebi-cli add-algorithm ../analyze
-celebi-cli add-parameter events 10000
+celebi-cli set-parameter events 10000
 ```
 
 Implement the algorithm commands/source and set the task environment before
@@ -51,11 +51,25 @@ celebi-cli ls
 The second argument is an alias. Do not substitute manual dependency JSON for this
 operation. `@/` paths are project-root paths supported by these linking commands.
 
+For numbered objects or dependencies, use the bounded half-open range commands:
+
+```bash
+celebi-cli create-multi-tasks simulation 20 --start 10
+celebi-cli add-multi-inputs @/tasks/source input 20 --start 10
+```
+
+The first creates `simulation_10` through `simulation_19` and sets each task's
+`index` parameter. The second links `source_10` through `source_19` under matching
+`input_N` aliases. Use `remove-multi-inputs ALIAS_BASE STOP --start START` to remove
+the same alias range. A bulk invocation is limited to 10000 items.
+
 ## Data sources
 
 Choose the operation matching the actual location of the bytes:
 
 - Local data: create a data task, enter it, and use `celebi-cli upload-data PATH`.
+- Local directory collection: `celebi-cli create-multi-data PATH` creates and
+  uploads one data object per immediate child directory.
 - Existing Yuki impression: `celebi-cli attach-data IMPRESSION_UUID --path NAME`
   creates a local rawdata pointer.
 - Data on an SSH runner: `celebi-cli register-ssh-data RUNNER /remote/data

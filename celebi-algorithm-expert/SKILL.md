@@ -26,7 +26,7 @@ the task's environment to match it. Set the actual execution environment on the
 task; linking an algorithm does not automatically copy it.
 
 The executor substitutes values from the **task's** `parameters` mapping. Set every
-required value there, normally with `celebi-cli add-parameter events 10000`. When
+required value there, normally with `celebi-cli set-parameter events 10000`. When
 editing YAML directly, quote parameter values as strings: Yuki's substitution uses
 string replacement without coercing numbers. Algorithm `parameters` are not
 implicitly merged into the task.

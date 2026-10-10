@@ -53,10 +53,10 @@ portable source-file execution if that meets the user's task design.
 ## Configure the execution context
 
 ```bash
-celebi-cli add-parameter events 10000
+celebi-cli set-parameter events 10000
 celebi-cli add-input @/tasks/source inputdata
-celebi-cli set-env ENVIRONMENT
-celebi-cli set-mem 4Gi
+celebi-cli set-environment ENVIRONMENT
+celebi-cli set-memory-limit 4Gi
 celebi-cli request-runner RUNNER
 celebi-cli ls
 celebi-cli status
@@ -65,6 +65,12 @@ celebi-cli status
 `add-input PATH ALIAS` declares a dependency; `remove-input ALIAS` removes it.
 Do not hand-write `dependencies` or `alias` YAML as a replacement for graph edges.
 Use `predecessors` and `successors` to inspect links.
+
+For numbered dependencies, `add-multi-inputs PATH_BASE ALIAS_BASE STOP
+--start START` adds `PATH_BASE_N` as `ALIAS_BASE_N` for the half-open range
+`START <= N < STOP`. `remove-multi-inputs ALIAS_BASE STOP --start START` removes
+the corresponding aliases. Review the range first; each command permits at most
+10000 items and may leave earlier changes in place if a later item fails.
 
 Task YAML may contain `descriptor`, `environment`, `memory_limit`, `parameters`,
 and inline `commands`. These are not an exhaustive schema; preserve supported
@@ -86,7 +92,7 @@ consumer workspace. A parameter is relative to the alias only if the command
 prepends that alias. Match the actual command to avoid duplicate path prefixes.
 
 Parameter, code, or dependency edits can change impressions and downstream state;
-inspect `changes`/`status` and resubmit when needed. `celebi-cli submit RUNNER` uses
+inspect `changes`/`status` and resubmit when needed. `celebi-cli submit --runner RUNNER` uses
 the current object and checks its requested runner; it does not take a task path.
 Write results to runtime `stageout/`. `collect` copies results to Yuki, not to this
 source directory.

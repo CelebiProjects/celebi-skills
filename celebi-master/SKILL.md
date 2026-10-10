@@ -53,6 +53,12 @@ instructions and CLI/source documentation; no particular `Skill` tool is require
 
 ## Working conventions
 
+Use the three entry points according to their scope: `celebi` enters the persistent
+interactive shell, `celebi-cli COMMAND` runs one operation, and
+`celebi-git COMMAND` contains Git integration. In the interactive shell, bare
+`helpme` is object-aware; `help COMMAND`, `helpme COMMAND`, and `COMMAND --help`
+show the same detailed command documentation.
+
 Run standalone commands with the OS working directory set to the target object.
 Use shell `cd` or the execution tool's working-directory option. `celebi-cli cd`
 cannot change its parent shell's working directory.
@@ -78,11 +84,11 @@ consult `celebi-task-expert` before assuming `code/` means the inline task.
 ```bash
 # From a configured task; RUNNER must match its requested runner.
 celebi-cli request-runner RUNNER
-celebi-cli submit RUNNER
+celebi-cli submit --runner RUNNER
 celebi-cli status
 celebi-cli log 0
 celebi-cli collect plots
-celebi-cli viewurl
+celebi-cli view-url
 ```
 
 `submit [RUNNER]` defaults to `local`; its argument is not a task path. Submitting
@@ -91,8 +97,8 @@ Use the intended task directory for a single analysis endpoint.
 
 ## Source of truth
 
-This revision was checked against local Celebi (base `b3880e3`) and Yuki (base
-`ef4ae75`), including their uncommitted changes, on 2026-09-09.
+This revision was checked against local Celebi (base `f1c3819`) and Yuki (base
+`7f76edb`), including their uncommitted changes, on 2026-10-10.
 Prefer executable code and tests over older plans or CLI docstrings
 when they disagree. Verify the installed version with `celebi-cli --help` and
 command-specific help before using a feature absent from an older deployment.
@@ -109,8 +115,8 @@ Useful source locations in the respective repositories:
 A task failure, an unavailable service, and data missing from a browser are different
 problems. Start with the failing layer and use the routing table to load the needed
 skill. Keep project UUIDs, impression UUIDs, workflow UUIDs, runner names, and runner
-IDs distinct in commands and reports. For example, `kill-workflow` takes a workflow
-UUID, while `viewurl` takes an impression identity.
+IDs distinct in commands and reports. For example, `stop-workflow` takes a workflow
+UUID, while `view-url` takes an impression identity.
 
 Completion means verifying the requested result: creation needs valid configuration,
 execution needs terminal state and expected artifacts, a transfer needs the selected

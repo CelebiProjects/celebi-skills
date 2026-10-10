@@ -14,13 +14,13 @@ contained tasks and checks that their requested runners agree.
 celebi-cli dite
 celebi-cli runners
 celebi-cli request-runner RUNNER
-celebi-cli submit RUNNER
+celebi-cli submit --runner RUNNER
 celebi-cli status
 celebi-cli log 0
 ```
 
-`submit [RUNNER]` defaults to `local`, even when a different runner is configured.
-Its argument is a runner name, not a task path. `request-runner` sets the target;
+`submit --runner RUNNER` defaults to `local` when the option is omitted, even when
+a different runner is configured. `request-runner` sets the target;
 submission rejects a mismatch. Dependencies are resolved as part of execution.
 Verify the success message and subsequent status; a command returning without a
 shell error is not alone proof that submission succeeded.
@@ -84,7 +84,7 @@ or starting duplicate transfers.
 
 ## Cancellation and recovery
 
-For requested cancellation, `kill-workflow WORKFLOW_UUID` targets an execution,
+For requested cancellation, `stop-workflow WORKFLOW_UUID` targets an execution,
 not an impression. Inspect the resulting state before another submission. Bulk
 cancellation and stale-resource cleanup have different liveness scopes; use
 `celebi-impression-management` when available instead of treating them as retries.

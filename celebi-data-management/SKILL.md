@@ -73,7 +73,7 @@ while its server job can continue. Retain returned IDs/progress information and
 inspect state before retrying a mutation. Do not start duplicate uploads just
 because polling ended.
 
-For a local download, use the actual result link from `viewurl`; `collect` only
+For a local download, use the actual result link from `view-url`; `collect` only
 brings selected results to Yuki. For archive import/export or cache deletion use
 `celebi-impression-management` when available. Do not purge the only usable data
 copy as a staging workaround.

@@ -78,21 +78,21 @@ cd my-task
 celebi-cli add-algorithm ../my-algorithm
 
 # Set parameters
-celebi-cli add-parameter events 10000
+celebi-cli set-parameter events 10000
 
 # Define commands/source in my-algorithm and configure the task environment first.
 # Submit to the runner requested by this task (the argument is a runner name).
 celebi-cli request-runner local
-celebi-cli submit local
+celebi-cli submit --runner local
 celebi-cli status
 celebi-cli log 0
 
 # Collect plots into Yuki storage and get the result-view URL
 celebi-cli collect plots
-celebi-cli viewurl
+celebi-cli view-url
 ```
 
-The skills reflect the local Celebi and Yuki source trees reviewed on 2026-09-09,
+The skills reflect the local Celebi and Yuki source trees reviewed on 2026-10-10,
 including their uncommitted changes. The master folder retains its existing skill
 name `celebi`; the other skill names match their folders. Companion skills are
 optional and can be installed individually. Check the installed CLI's command-specific

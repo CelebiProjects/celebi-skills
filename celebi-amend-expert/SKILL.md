@@ -27,7 +27,7 @@ metadata and dependency edges through Celebi commands.
 
 | Evidence | Check and repair |
 |----------|------------------|
-| Runner mismatch before execution | Inspect `runners` and requested runner; use `request-runner NAME` and `submit NAME` consistently |
+| Runner mismatch before execution | Inspect `runners` and requested runner; use `request-runner NAME` and `submit --runner NAME` consistently |
 | `dissonance` or no user logs | Inspect engine logs, workflow construction, environment mapping, input staging, and connectivity |
 | `failed` with user traceback | Repair the indicated command/code/parameter issue |
 | Failed downstream task with skip detail | Fix the upstream failure first; the downstream code may never have run |
@@ -51,7 +51,7 @@ metadata and dependency edges through Celebi commands.
 - A source subdirectory is not intrinsically illegal; ensure command paths match.
   Avoid creating an extra `code/` wrapper to imitate the runtime mount.
 - Native/SSH runners resolve environment strings through Yuki's conda mapping.
-  Check `runner-envs RUNNER`, `test-runner RUNNER`, and server mappings before
+  Check `runner-environments RUNNER`, `test-runner RUNNER`, and server mappings before
   changing the scientific environment to an arbitrary image.
 
 For backend status inconsistencies, compare detailed job status with workflow
