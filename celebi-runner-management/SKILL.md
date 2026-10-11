@@ -1,6 +1,6 @@
 ---
 name: celebi-runner-management
-description: Configure and diagnose Celebi execution runners, requested-runner settings, conda environment mappings, and REANA booking through Yuki.
+description: Configure and diagnose Celebi execution runners, install project-scoped Conda environments, manage compatibility mappings, and book REANA catalogs through Yuki.
 ---
 
 # Manage execution runners
@@ -18,7 +18,7 @@ when those skills are installed.
 | Yuki runner registry | `celebi-cli runners` | `register-runner` / `update-runner` |
 | Current object's requested runner | `celebi-cli status` | `celebi-cli request-runner NAME` |
 | Creation defaults | `celebi-cli user-config --list` | `celebi-cli user-config` |
-| Runner environment availability | `celebi-cli runner-environments NAME` | Provision in the intended runner environment |
+| Project environment availability | `celebi-cli runner-environments NAME` | `celebi-cli install-environment NAME ENV` |
 | Server environment mapping | `yuki env-map list` on the service host | `yuki env-map add SOURCE conda VALUE` |
 
 Changing a client endpoint does not create a runner. Changing the global default
@@ -58,16 +58,33 @@ when diagnosing a new connection or environment failure.
 ## Resolve environments
 
 The algorithm/task YAML environment and backend implementation jointly determine
-execution. REANA uses container environments. Native/SSH map environment identifiers
-to conda directives using Yuki's `conda_env_map`: exact key, then Docker-prefix
-stripping and retry, then a sanitized fallback name. `script` skips conda activation.
+execution. REANA uses container environments. For SSH/IHEP, a simple logical name
+that has no explicit `conda_env_map` entry resolves to
+`<remote_workdir>/environments/<project_uuid>/<name>`. Each project therefore has a
+separate prefix even when names match. `script`, `rawdata`, `datalist`, and
+`lhcb_ap_datalist` retain their reserved behavior.
+
+For a project-managed environment, inspect `.celebi-env/NAME.yaml`, then run:
+
+```bash
+celebi-cli install-environment RUNNER NAME
+# Or select another standard Conda YAML:
+celebi-cli install-environment RUNNER NAME --file PATH
+celebi-cli runner-environments RUNNER
+```
+
+The command is supported for SSH and IHEP runners, creates or updates the prefix with
+`conda env update --prune`, and ignores the YAML `name` field. Treat it as trusted,
+mutable runner state: there is no environment-specification digest. Do not suggest it
+for REANA or native runners. A missing project environment must be installed rather
+than worked around by changing scientific configuration.
 
 On the actual Yuki host, inspect mappings with `yuki env-map list`. For a required
 mapping, use `yuki env-map add SOURCE conda VALUE`, where VALUE is the runner's
-usable conda environment name/path. Verify with `runner-environments` and a task when
-execution is authorized. Mapping a name does not install the environment. Although
-structured entries accept a type field, the current executors consume the value
-as a conda directive; do not claim that `venv` enables venv execution.
+usable conda environment name/path. Explicit mappings are the compatibility path and
+take precedence over project prefixes; mapping a name does not install it. Although
+structured entries accept a type field, the current executors consume the value as a
+conda directive; do not claim that `venv` enables venv execution.
 
 ## REANA booking
 
@@ -81,5 +98,6 @@ use `celebi-data-management`; for stale execution resources use
 `celebi-impression-management` when available.
 
 Source anchors: Celebi `CelebiChrono/celebi_cli/commands/execution_management.py`,
-`task_configuration.py`, `booking.py`; Yuki `Yuki/kernel/runner_config.py`,
-`native_workflow.py`, `ssh_workflow.py`, and `Yuki/server/runner_probe.py`.
+`task_configuration.py`, `booking.py`; Yuki
+`Yuki/kernel/runners/project_environments.py`, `Yuki/kernel/workflows/ssh.py`, and
+`Yuki/server/routes/runner.py`.
