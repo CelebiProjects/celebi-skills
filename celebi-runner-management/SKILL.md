@@ -58,10 +58,10 @@ when diagnosing a new connection or environment failure.
 ## Resolve environments
 
 The algorithm/task YAML environment and backend implementation jointly determine
-execution. REANA uses container environments. For SSH/IHEP, a simple logical name
+execution. REANA uses container environments. For SSH/IHEP/native, a simple logical name
 that has no explicit `conda_env_map` entry resolves to
-`<remote_workdir>/environments/<project_uuid>/<name>`. Each project therefore has a
-separate prefix even when names match. `script`, `rawdata`, `datalist`, and
+the backend's `<runner-workdir>/environments/<project_uuid>/<name>`. Each project
+therefore has a separate prefix even when names match. `script`, `rawdata`, `datalist`, and
 `lhcb_ap_datalist` retain their reserved behavior.
 
 For a project-managed environment, inspect `.celebi-env/NAME.yaml`, then run:
@@ -73,11 +73,20 @@ celebi-cli install-environment RUNNER NAME --file PATH
 celebi-cli runner-environments RUNNER
 ```
 
-The command is supported for SSH and IHEP runners, creates or updates the prefix with
+The command is supported for SSH, IHEP, and native runners, creates or updates the prefix with
 `conda env update --prune`, and ignores the YAML `name` field. Treat it as trusted,
 mutable runner state: there is no environment-specification digest. Do not suggest it
-for REANA or native runners. A missing project environment must be installed rather
+for REANA runners. A missing project environment must be installed rather
 than worked around by changing scientific configuration.
+
+Native `<runner-workdir>` defaults to `~/.Yuki/LocalWorkflows`; its workflow state
+lives below `workflows/<project_uuid>/<workflow_uuid>`. A fresh `test-runner` probe
+must include native host-agent liveness, not only local tool availability.
+
+Treat native execution and Yuki Storage as one storage domain. Successful native
+stage-out is collected directly into Storage, so native has no separate managed
+runner cache and is not a transfer location; use `yuki` instead. `cache-on-runner`
+has no additional effect for native workflows.
 
 On the actual Yuki host, inspect mappings with `yuki env-map list`. For a required
 mapping, use `yuki env-map add SOURCE conda VALUE`, where VALUE is the runner's
@@ -99,5 +108,6 @@ use `celebi-data-management`; for stale execution resources use
 
 Source anchors: Celebi `CelebiChrono/celebi_cli/commands/execution_management.py`,
 `task_configuration.py`, `booking.py`; Yuki
-`Yuki/kernel/runners/project_environments.py`, `Yuki/kernel/workflows/ssh.py`, and
+`Yuki/kernel/runners/project_environments.py`, `Yuki/kernel/workflows/ssh.py`,
+`Yuki/kernel/workflows/native.py`, and
 `Yuki/server/routes/runner.py`.
