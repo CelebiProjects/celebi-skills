@@ -25,6 +25,12 @@ Changing a client endpoint does not create a runner. Changing the global default
 runner affects new tasks; it does not retarget existing tasks. `submit --runner NAME` must
 match the requested runner, and an omitted argument defaults to `local`.
 
+On first Yuki server start, the current implementation registers a native runner
+named `local` if that name is absent; it preserves any existing `local` definition.
+The runner entry alone is not readiness: start the host agent with
+`yuki native-runner start`, then probe it. Do not re-register `local` merely because
+its agent is stopped.
+
 ## Configure the backend actually in use
 
 Inspect the existing name, backend, URL, settings, and health before updating it.
@@ -73,6 +79,11 @@ celebi-cli install-environment RUNNER NAME --file PATH
 celebi-cli runner-environments RUNNER
 ```
 
+New Celebi projects include `.celebi-env/default.yaml` (ROOT 6.38.04, NumPy, and
+Python 3.10), and new tasks default to the logical environment `default` unless
+`user-config` overrides it. Install that environment per project and runner; its
+presence in the source tree does not mean it is already provisioned.
+
 The command is supported for SSH, IHEP, and native runners, creates or updates the prefix with
 `conda env update --prune`, and ignores the YAML `name` field. Treat it as trusted,
 mutable runner state: there is no environment-specification digest. Do not suggest it
@@ -95,6 +106,11 @@ take precedence over project prefixes; mapping a name does not install it. Altho
 structured entries accept a type field, the current executors consume the value as a
 conda directive; do not claim that `venv` enables venv execution.
 
+LHCb dated Conda environments are a reserved runtime form, not project-managed
+prefix names: `lb-conda/PACKAGE/YYYY-MM-DD`. Yuki mounts `lhcb.cern.ch` and wraps
+each user command with `lb-conda PACKAGE/DATE`; the runner/base system still needs
+compatible CVMFS access. Do not combine `lb-conda/...` with a YAML `lb_run` block.
+
 ## REANA booking
 
 Booking publishes a project file catalog to REANA and is distinct from submitting
@@ -109,5 +125,5 @@ use `celebi-data-management`; for stale execution resources use
 Source anchors: Celebi `CelebiChrono/celebi_cli/commands/execution_management.py`,
 `task_configuration.py`, `booking.py`; Yuki
 `Yuki/kernel/runners/project_environments.py`, `Yuki/kernel/workflows/ssh.py`,
-`Yuki/kernel/workflows/native.py`, and
+`Yuki/kernel/workflows/native.py`, `Yuki/kernel/jobs/container.py`, and
 `Yuki/server/routes/runner.py`.

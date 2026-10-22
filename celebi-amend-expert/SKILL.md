@@ -35,6 +35,8 @@ metadata and dependency edges through Celebi commands.
 | Unsubstituted placeholder or type error | Define the value in task `parameters`; quote YAML values as strings |
 | `code/code/...` or missing source | Match paths to the real source tree and runtime code link |
 | Inline source missing at `code/...` | Check client versus Yuki path behavior; Yuki's code link still uses the linked algorithm |
+| `Celebi lb-run error` / `lb-conda error` | Check CVMFS visibility, executable, environment form, platform compatibility, and conflicting `lb_run` settings |
+| XRootD manifest registration fails | Check SSH runner type, `xrdfs`, credentials, root URL, and checksum policy before retrying |
 | Duplicated input alias in path | Determine whether the command or parameter supplies the alias, and include it once |
 | Completed job with absent local outputs | Check `whereabouts`, runner listings, and collection selection; outputs are remote |
 
@@ -53,6 +55,9 @@ metadata and dependency edges through Celebi commands.
 - Native/SSH runners resolve environment strings through Yuki's conda mapping.
   Check `runner-environments RUNNER`, `test-runner RUNNER`, and server mappings before
   changing the scientific environment to an arbitrary image.
+- `lb-conda/PACKAGE/YYYY-MM-DD` and `lb_run` are mutually exclusive. The latter
+  requires string `project`/`version` fields and wraps only user commands; the base
+  environment and `/cvmfs/lhcb.cern.ch` must still be suitable.
 
 For backend status inconsistencies, compare detailed job status with workflow
 state. Native/SSH `.done` markers indicate completion; terminal workflows classify
@@ -77,7 +82,8 @@ repair. A client timeout does not establish that the server job stopped.
 Use `celebi-algorithm-expert`, `celebi-task-expert`, or `celebi-output-checker` for
 the relevant work when installed. Source anchors: Celebi
 `CelebiChrono/kernel/vtask_setting.py`, `vtask_input.py`, `vobj_execution.py`, and
-Yuki `Yuki/kernel/container_job.py`, `native_workflow.py`, `ssh_workflow.py`.
+Yuki `Yuki/kernel/jobs/container.py`, `kernel/workflows/native.py`,
+`kernel/workflows/ssh.py`.
 
 ## Repair the owning layer
 

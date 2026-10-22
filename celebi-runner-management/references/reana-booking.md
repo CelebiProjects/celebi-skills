@@ -29,4 +29,4 @@ command's exit status alone.
 
 Source anchors: Celebi `CelebiChrono/celebi_cli/commands/booking.py`,
 `CelebiChrono/interface/shell_modules/reana_booking.py`; Yuki
-`Yuki/kernel/reana_booker.py` and `Yuki/server/routes/booking.py`.
+`Yuki/server/services/reana_booking.py` and `Yuki/server/routes/booking.py`.

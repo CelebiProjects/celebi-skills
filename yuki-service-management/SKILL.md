@@ -18,7 +18,8 @@ existing lifecycle mechanism.
 
 Yuki uses Flask plus Celery, with RabbitMQ at `amqp://localhost` in the checked
 configuration. Native `yuki server start` starts Flask on `0.0.0.0:3315` and a Celery
-worker, then waits on both processes. It runs in the foreground; arrange process
+worker, ensures a native runner named `local` exists, then waits on both processes.
+An existing `local` definition is preserved. It runs in the foreground; arrange process
 management according to the deployment rather than assuming daemonization.
 
 The checked `yuki server status` implementation returns a placeholder `running`.
@@ -30,7 +31,9 @@ and the service manager/container before relying on those commands for lifecycle
 
 For an authorized native source installation, install into the intended environment
 with `pip install -e .` from the Yuki checkout. Make the matching CelebiChrono version
-available there and provide RabbitMQ before starting the service.
+available there and provide RabbitMQ before starting the service. The standard
+package now includes Snakemake for native execution and expects the host environment
+to provide the `conda` command used for project environments.
 
 For an authorized container deployment, inspect supported options first:
 
@@ -62,6 +65,8 @@ to test a code edit.
    web server can coexist with a stopped worker or unavailable broker.
 4. For backend execution, inspect `celebi-cli runners`, `test-runner NAME`, and
    task `engine-logs --fetch`. Separate SSH/REANA failures from Yuki availability.
+   A registered `local` native runner also needs a live `yuki native-runner start`
+   host agent; registration is not a liveness check.
 
 ## Storage-root caveat
 
@@ -80,6 +85,11 @@ mismatch and desired layout are established.
 After a service change, verify real HTTP connectivity, worker/broker health, runner
 visibility, and access to a known impression. Execute a small workflow only when
 execution is in scope; do not claim full recovery from placeholder status output.
+
+Bookkeeping deployments additionally expose scoped result relay and runner support
+through `Yuki/services/celebi_server_booker.py` and
+`Yuki/server/routes/server_booking.py`; this does not turn the Yuki service itself
+into the public analysis website.
 
 Source anchors: Yuki `Yuki/server_main.py`, `Yuki/server/app.py`, `config.py`,
 `tasks.py` under the server package, `Yuki/main.py`, and `docker-compose.yml`.

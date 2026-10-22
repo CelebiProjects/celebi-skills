@@ -18,7 +18,7 @@ its Yuki execution and data service.
 | `celebi-output-checker` | View logs and retrieve output files (PNG, ROOT, etc.) |
 | `celebi-runner-management` | Configure runners, environment mappings, and REANA booking |
 | `celebi-data-management` | Register, verify, locate, and transfer data |
-| `celebi-impression-management` | Inspect provenance, migrate/archive impressions, and scope cleanup |
+| `celebi-impression-management` | Inspect provenance, publish bookkeeping, migrate/archive impressions, and scope cleanup |
 | `yuki-service-management` | Deploy and diagnose Yuki, Celery, RabbitMQ, and storage |
 
 ## Installation
@@ -80,11 +80,14 @@ celebi-cli add-algorithm ../my-algorithm
 # Set parameters
 celebi-cli set-parameter events 10000
 
+# New projects include .celebi-env/default.yaml; install it on the local runner.
+celebi-cli install-environment local default
+
 # Define commands/source in my-algorithm and configure the task environment first.
 # Submit to the runner requested by this task (the argument is a runner name).
 celebi-cli request-runner local
 celebi-cli submit --runner local
-celebi-cli status
+celebi-cli status --wait
 celebi-cli log 0
 
 # Collect plots into Yuki storage and get the result-view URL
@@ -92,14 +95,14 @@ celebi-cli collect plots
 celebi-cli view-url
 ```
 
-The skills reflect the local Celebi and Yuki source trees reviewed on 2026-10-10,
+The skills reflect the local Celebi and Yuki source trees reviewed on 2026-10-22,
 including their uncommitted changes. The master folder retains its existing skill
 name `celebi`; the other skill names match their folders. Companion skills are
 optional and can be installed individually. Check the installed CLI's command-specific
 help when working against an older deployment. The task skill documents the
 current inline-code path differences between client tests and Yuki execution.
-The service and impression skills also distinguish implemented behavior from
-placeholder server status and packing commands.
+The service and impression skills also cover the built-in local runner, immutable
+impressions, bookkeeping publication, and implemented cleanup behavior.
 
 ## License
 

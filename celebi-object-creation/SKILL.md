@@ -75,6 +75,10 @@ Choose the operation matching the actual location of the bytes:
 - Data on an SSH runner: `celebi-cli register-ssh-data RUNNER /remote/data
   --descriptor NAME --timeout 120` computes metadata, stages data in the runner's
   managed impression area, and creates or fills a local pointer task.
+- XRootD tree visible from an SSH runner: `celebi-cli register-xrootd-data RUNNER
+  ROOT_URL --descriptor NAME --checksum auto --timeout 120` freezes a datalist
+  manifest without copying payloads. It is valid from a project/directory or an
+  existing XRootD-backed datalist, not an unrelated task.
 
 Registration copies/stages remote data and may be lengthy; it is not just a local
 metadata edit. Prefer it over generating a dummy computation to represent existing
@@ -90,7 +94,7 @@ After creation, check object type, effective commands, inputs, environment, and
 README. Do not claim creation implies execution readiness or successful execution.
 Source anchors: Celebi `CelebiChrono/kernel/vdirectory.py`, `vtask.py`,
 `celebi_cli/commands/object_creation.py` under the same package, and Yuki
-`Yuki/kernel/remote_data_ops.py`.
+`Yuki/kernel/storage/remote.py`.
 
 ## Choose the next operation
 

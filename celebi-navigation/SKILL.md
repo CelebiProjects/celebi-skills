@@ -6,9 +6,11 @@ description: Explore Celebi analysis objects, project paths, containment, and de
 # Navigate a Celebi project
 
 Start in the actual project or object directory. For standalone CLI invocations,
-use shell `cd` or the tool's working-directory option. `celebi-cli cd`, `navigate`,
-and `cdproject` run in a child process and cannot move the parent shell. Interactive
-Celebi shell navigation maintains its own context.
+use shell `cd` or the tool's working-directory option. Use `project-path` to print
+the current project path and `use-project NAME` to select a registered project for
+later Celebi sessions. The compatibility names `navigate`, `cdproject`, and
+standalone `celebi-cli cd` cannot move their parent shell and should not be used in
+new instructions. Interactive Celebi shell navigation maintains its own context.
 
 ```bash
 celebi-cli tree
@@ -21,6 +23,20 @@ celebi-cli project-uuid
 Use `celebi-cli ls [path]` for object-aware listings. Read source/configuration with
 normal filesystem tools when useful; an ordinary file listing does not identify
 Celebi object types.
+
+## Project registration and identity
+
+`list-projects` shows the per-user registry, `use-project NAME` selects an entry,
+and `register-project PATH` adds an existing project without moving its files.
+Registering an ordinary checkout preserves its project UUID. For a copied project
+that is intentionally a distinct analysis, use `register-project PATH --new-project`
+(or interactive `celebi use PATH --new-project`) to write a fresh UUID. This is an
+identity change, not a harmless navigation flag; do not use it merely to open a
+second checkout of the same project.
+
+When initializing for an analysis already created by the bookkeeping website, use
+`celebi-cli init --uuid ISSUED_UUID`. Otherwise `init` generates a UUID. Confirm the
+intended identity before registration or publication.
 
 ## Containment and dependency graphs
 

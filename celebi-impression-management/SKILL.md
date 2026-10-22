@@ -1,12 +1,13 @@
 ---
 name: celebi-impression-management
-description: Inspect Celebi impression provenance, migrate or assess local snapshot storage, export/import Yuki impressions, and safely scope requested cache or workflow cleanup.
+description: Inspect Celebi provenance, create immutable snapshots, publish bookkeeping, migrate or archive impressions, and safely scope requested cleanup.
 ---
 
 # Manage impressions and retained execution data
 
-Use this skill for provenance, snapshot storage, archive transfer, or requested
-cleanup. Routine execution and file collection belong to their respective skills.
+Use this skill for provenance, immutable snapshotting, bookkeeping publication,
+snapshot storage, archive transfer, or requested cleanup. Routine execution and
+file collection belong to their respective skills.
 Establish the project UUID, relevant impression UUIDs, workflow UUIDs, and data
 locations; these identifiers and storage layers are distinct.
 
@@ -30,12 +31,57 @@ Local CAS snapshot objects and remote result files are different storage. A loca
 snapshot does not establish that runner outputs are still retained. Inspect
 `whereabouts` and files for the specific impression before claiming reproducibility.
 
+## Immutable project snapshots
+
+Use immutable mode only for a fixed project tree whose caller prevents concurrent
+edits. Run it from the project root:
+
+```bash
+celebi-cli impress --immutable
+celebi-cli impress --immutable --cache-dir /persistent/cache/for-this-project
+```
+
+It evaluates the DAG once in topological order, implies offline operation, and
+reuses complete CAS payloads. `--cache-dir` requires `--immutable`, belongs to one
+project, and may link generated stores into the external cache. It is not a general
+shared cache across unrelated projects. Do not commit those links or
+`.celebi/immutable-impress*` runtime files. Conflicting non-empty local and external
+stores are refused rather than merged.
+
+## Publish analysis bookkeeping
+
+Bookkeeping is an externally mutating Git-and-service workflow, not a synonym for
+local `impress`. Confirm the intended repository, upstream branch, project UUID,
+bookkeeping server, Yuki endpoint, commit message, and optional new tag first.
+
+```bash
+celebi-cli register-celebi-server \
+  --server https://celebi.example \
+  --token "$CELEBI_PROJECT_TOKEN" \
+  --yuki https://yuki.example
+celebi-cli bookkeep --commit "Publish results" --tag v1
+celebi-cli bookkeeping-url
+```
+
+Registration verifies the analysis token and stores it in git-excluded
+`.celebi/bookkeeping.local.json`. `bookkeep` authorizes before changing Git, stages
+shareable changes, commits when needed, atomically pushes the upstream branch and
+new tag, asks the server to impress that exact commit, then relays eligible small
+collected results from Yuki with a scoped grant. Existing tags and behind/diverged
+branches are rejected. Do not use it when the user only requested a local snapshot.
+
+Missing results normally fail the publication after code has already been pushed.
+Collect them and rerun `bookkeep` without `--tag` to resume the published commit.
+`--allow-partial` deliberately permits missing results; it does not make them
+available. Use `open-bookkeeping` only when opening a browser is requested.
+
 ## Local storage maintenance
 
 ```bash
 celebi-cli migrate-impressions --dry-run --keep-legacy
 celebi-cli gc-impressions --dry-run --grace-days 14
 celebi-cli pack-impressions
+celebi-cli tidyup
 ```
 
 `migrate-impressions` defaults to execution, so explicitly request its dry run for
@@ -45,9 +91,12 @@ retention are established; use `--execute` when migration is in scope.
 the grace period when executed. Reachability is defined by CAS refs, not merely
 which task output was most recently viewed.
 
-The checked `pack-impressions` implementation only evaluates thresholds/stats;
-`packed_objects` remains zero. Do not claim it compressed data or freed disk space,
-even with `--force`.
+The checked `pack-impressions` implementation still only evaluates thresholds and
+reports stats; `packed_objects` remains zero, even with `--force`. Do not claim it
+compressed data or freed disk space. `tidyup` is an interactive front end that
+previews local CAS, stale workflow workspace, and SSH cache cleanup before deletion.
+Keep the preview and confirmation boundaries intact. The former `homekeep` name is
+obsolete.
 
 ## Export/import on the Yuki host
 
@@ -99,6 +148,7 @@ a dry run. Do not discard previews or bypass protections to reclaim space quickl
 only when those exact data losses are intended. After execution, report removed,
 skipped, protected, and failed items from the actual result.
 
-Source anchors: Celebi `CelebiChrono/kernel/impression_gc.py`, `impression_pack.py`,
-`liveness.py`, `celebi_cli/commands/liveness.py` under that package; Yuki
-`Yuki/kernel/impression_transfer.py`, `workflow_purge.py`, and `workflow_kill.py`.
+Source anchors: Celebi `CelebiChrono/kernel/immutable_impress.py`,
+`impression_gc.py`, `impression_pack.py`, `interface/shell_modules/server_booking.py`,
+and `celebi_cli/commands/liveness.py`; Yuki `Yuki/kernel/storage/`,
+`kernel/execution/`, `kernel/workflows/`, and `Yuki/services/celebi_server_booker.py`.

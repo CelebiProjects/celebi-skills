@@ -11,6 +11,7 @@ Elapsed time alone does not justify restarting a long analysis.
 
 ```bash
 celebi-cli status
+celebi-cli status --wait
 celebi-cli log 0
 celebi-cli engine-logs
 ```
@@ -45,6 +46,11 @@ job completion. Keep follow sessions manageable, check status separately, and
 report what changed or what evidence is missing. No universal two-minute waiting
 period makes a restart correct.
 
+`status --wait` does stop at terminal state and actively refreshes runner status;
+its default poll interval is two seconds and can be changed with `-i` or
+`--poll-interval`. Use it for an explicitly requested wait, not as an unbounded
+background action in an ordinary diagnosis.
+
 Avoid resubmitting or changing the desired configuration merely because execution
 is slow. An intentional edit creates new desired state and may leave an older
 impression running; identify which run is being observed. If cancellation is within
@@ -57,7 +63,7 @@ are a reason to diagnose connectivity and report uncertainty, not to launch copi
 
 Use `celebi-amend-expert` for a diagnosed failure and `celebi-output-checker` for
 result verification when available. Source anchors: Yuki
-`Yuki/kernel/native_workflow.py`, `ssh_workflow.py`, `status_constants.py`, and
+`Yuki/kernel/workflows/native.py`, `workflows/ssh.py`, `kernel/execution/status.py`, and
 `Yuki/server/routes/status.py`.
 
 ## Escalate to the relevant layer

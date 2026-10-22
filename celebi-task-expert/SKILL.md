@@ -73,17 +73,25 @@ the corresponding aliases. Review the range first; each command permits at most
 10000 items and may leave earlier changes in place if a later item fails.
 
 Task YAML may contain `descriptor`, `environment`, `memory_limit`, `parameters`,
-and inline `commands`. These are not an exhaustive schema; preserve supported
-backend/data fields already in use. Quote parameter values as strings because
-Yuki substitutes them directly. There is no automatic merge of algorithm parameter
-defaults into the task.
+inline `commands`, and an optional `lb_run` mapping. These are not an exhaustive
+schema; preserve supported backend/data fields already in use. Quote parameter
+values as strings because Yuki substitutes them directly. There is no automatic
+merge of algorithm parameter defaults into the task.
 
 Algorithm-backed tasks must match a concrete algorithm environment; an algorithm
 with `environment: script` permits the task's chosen environment. New-task defaults
 come from `user-config` at creation time. Changing global defaults does not rewrite
-existing task YAML. Use `celebi-cli user-config --list` to inspect effective creation defaults;
-`user-config` edits the user's settings, while `config` edits the current object's
-YAML. Do not substitute global settings changes for configuring an existing task.
+existing task YAML. Use `celebi-cli user-config --list` to inspect effective
+creation defaults; `user-config` edits the user's settings, while `config` edits the
+current object's YAML. Do not substitute global settings changes for configuring an
+existing task.
+
+New projects currently create `.celebi-env/default.yaml`, and new tasks default to
+the logical environment `default`. Provision it on the intended native/SSH/IHEP
+runner with `install-environment`; changing the task to an unrelated image is not a
+substitute. `lb-conda/PACKAGE/YYYY-MM-DD` is a separate reserved environment form.
+Do not combine it with `lb_run`. If task commands are non-empty, the task-level
+`lb_run` contract replaces the linked algorithm's along with its commands.
 
 ## Paths, submission, and results
 
@@ -100,7 +108,7 @@ source directory.
 For runner setup and monitoring use `celebi-workflow-execution`; for results use
 `celebi-output-checker` when available. Implementation references: Celebi
 `CelebiChrono/kernel/vtask.py`, `vtask_setting.py`, `vtask_input.py`, and Yuki
-`Yuki/kernel/container_job.py`.
+`Yuki/kernel/jobs/container.py`.
 
 ## Verify input readiness without changing identity
 

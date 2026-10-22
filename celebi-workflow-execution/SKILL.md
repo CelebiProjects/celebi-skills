@@ -14,8 +14,8 @@ contained tasks and checks that their requested runners agree.
 celebi-cli dite
 celebi-cli runners
 celebi-cli request-runner RUNNER
-celebi-cli submit --runner RUNNER
-celebi-cli status
+celebi-cli submit --runner RUNNER --timeout 300
+celebi-cli status --wait
 celebi-cli log 0
 ```
 
@@ -24,6 +24,13 @@ a different runner is configured. `request-runner` sets the target;
 submission rejects a mismatch. Dependencies are resolved as part of execution.
 Verify the success message and subsequent status; a command returning without a
 shell error is not alone proof that submission succeeded.
+
+`--timeout` is the submission HTTP timeout, not a workflow-runtime limit. Yuki also
+uses an explicit longer value to extend SSH connection/command/start-confirmation
+limits for that workflow. A timed-out request may still be accepted. Current Yuki
+uses execution leases and returns an existing active/completed workflow for the
+same impressions where appropriate, but the client must still inspect status before
+retrying rather than rely on deduplication as a general retry mechanism.
 
 ## Confirm runner readiness
 
@@ -37,6 +44,9 @@ for service/worker faults rather than restarting it as part of ordinary submissi
 
 Use `status` and `log INDEX` for task progress, `engine-logs` for orchestration
 failures, and `engine-logs --fetch` when a fresh backend fetch is needed.
+`status --wait` refreshes runner state until terminal completion; use
+`--poll-interval SECONDS` (or `-i`) to change its two-second default. It is a
+blocking monitor, so bound it according to the user's request.
 `log 0 --follow --poll-interval 5` follows the first user command's log; it runs
 until interrupted, so keep the session bounded and check status separately.
 
@@ -94,11 +104,24 @@ ID already returned. Check status and engine logs to distinguish a rejected requ
 from work accepted by Yuki. Report uncertainty if connectivity prevents that check;
 do not launch duplicate jobs to obtain a clearer success message.
 
+If the recorded workflow state is specifically unknown, `submit --runner RUNNER
+--with-unknown` asks Celebi to refresh that workflow before deciding whether a new
+submission is needed. Do not use it as a generic force-resubmit flag.
+
+`celebi-cli cancel` cancels running impressions in the current task or container
+scope without deleting finished results or configuration. Use
+`stop-workflow WORKFLOW_UUID` only when targeting a known individual execution.
+The older `kill` and `kill-workflow` names are compatibility aliases, not preferred
+commands.
+
 After terminal success, verify the artifacts needed by the next step with
 `celebi-output-checker`. Use `celebi-data-management` for complete data registration
 or transfer procedures. Report whether execution, collection, and result validation
 have each completed; one does not imply the others.
 
+For a failed workflow, `collect --allow-failed SELECTOR` may retrieve diagnostic
+stageout that already exists; it does not convert the execution to success.
+
 Implementation anchors: Celebi `CelebiChrono/kernel/vobj_execution.py` and
-`celebi_cli/commands/` under that package; Yuki `Yuki/kernel/native_workflow.py`,
-`ssh_workflow.py`, `status_constants.py`, and `result_transfer.py`.
+`celebi_cli/commands/` under that package; Yuki `Yuki/kernel/execution/`,
+`kernel/workflows/`, and `kernel/storage/`.

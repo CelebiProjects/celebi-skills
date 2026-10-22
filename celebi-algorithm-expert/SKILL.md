@@ -35,6 +35,14 @@ Commands are shell strings. Quote values according to their intended shell usage
 substitution is textual, not argument escaping. Do not reuse parameter names for
 reserved path placeholders (`code`, `workspace`, `output`) or input aliases.
 
+For LHCb releases, an algorithm may add an `lb_run` mapping with required string
+fields `project` and `version`, plus optional `platform`; these fields support task
+parameter substitution. Yuki then wraps only the user commands with `lb-run` and
+adds the `lhcb.cern.ch` CVMFS requirement. The normal `environment` remains the
+base container/Conda environment and must be ABI-compatible. Alternatively,
+`environment: lb-conda/PACKAGE/YYYY-MM-DD` selects a dated LbConda environment.
+The two mechanisms cannot be combined.
+
 ## Runtime filesystem
 
 For an algorithm-backed task, the algorithm directory is linked as `code/`.
@@ -71,7 +79,7 @@ is in scope, and inspect outputs before claiming the analysis succeeded.
 For inline task code, use `celebi-task-expert` if available: client test/workaround
 mounts and the current Yuki runtime do not have identical inline code-path behavior.
 Source anchors: Celebi `kernel/vtask_setting.py`, `vtask.py` under
-`CelebiChrono/`, and Yuki `Yuki/kernel/container_job.py`.
+`CelebiChrono/`, and Yuki `Yuki/kernel/jobs/container.py`.
 
 ## Preserve reproducibility across consumers
 

@@ -42,10 +42,13 @@ Collection copies files from a runner into **Yuki**, not the local task director
 | `celebi-cli collect data` | Data files |
 | `celebi-cli collect logs` | Logs |
 | `celebi-cli collect '*.root'` | Matching stageout files |
+| `celebi-cli collect --allow-failed logs` | Available diagnostics from a failed workflow |
 | `celebi-cli collect-outputs` | All stageout outputs |
 
 Quote globs so the local shell does not expand them. Check skipped/failed entries;
 a successful job or collection request does not prove every requested file arrived.
+`--allow-failed` permits collection of files that already exist for a failed
+workflow; it does not mark the workflow successful or guarantee complete stageout.
 `refresh-filelists` refreshes runner listings, useful after terminal status froze a
 listing; it does not fetch result bytes. `whereabouts` distinguishes Yuki storage
 from runner caches. Do not infer missing results from absent local `stageout/`.
@@ -81,7 +84,8 @@ overfitting by themselves. Separate observed results from physical interpretatio
   and data locations before rerunning.
 
 Source anchors: Celebi `CelebiChrono/kernel/vtask_job.py`; Yuki
-`Yuki/server/routes/status.py`, `Yuki/kernel/vjob.py`, and `file_types.py`.
+`Yuki/server/routes/status.py`, `routes/workflow.py`, `Yuki/kernel/jobs/`, and
+`kernel/storage/file_types.py`.
 
 ## Check provenance and data completeness
 

@@ -41,7 +41,7 @@ uses the task's `parameters` mapping; do not assume algorithm defaults are merge
 | Submit and monitor the intended execution scope | `celebi-workflow-execution` |
 | Register runners, resolve environments, or book REANA catalogs | `celebi-runner-management` |
 | Register/verify data and transfer it between service locations | `celebi-data-management` |
-| Inspect provenance, migrate snapshots, archive, or clean retained data | `celebi-impression-management` |
+| Inspect provenance, publish bookkeeping, migrate/archive snapshots, or clean retained data | `celebi-impression-management` |
 | Deploy or diagnose the Flask/Celery service and its storage | `yuki-service-management` |
 | Assess a slow or apparently stalled workflow | `celebi-workflow-patience` |
 | Diagnose and repair a failure | `celebi-amend-expert` |
@@ -84,21 +84,29 @@ consult `celebi-task-expert` before assuming `code/` means the inline task.
 ```bash
 # From a configured task; RUNNER must match its requested runner.
 celebi-cli request-runner RUNNER
-celebi-cli submit --runner RUNNER
-celebi-cli status
+celebi-cli submit --runner RUNNER --timeout 300
+celebi-cli status --wait
 celebi-cli log 0
 celebi-cli collect plots
 celebi-cli view-url
 ```
 
-`submit [RUNNER]` defaults to `local`; its argument is not a task path. Submitting
+`submit --runner RUNNER` defaults to `local`; the runner is not a task path. Its
+request timeout does not limit workflow runtime, and a timed-out request may still
+have been accepted; inspect status before retrying. Submitting
 from a project/directory has broader scope and checks contained tasks' runners.
 Use the intended task directory for a single analysis endpoint.
 
+New projects create `.celebi-env/default.yaml` and new tasks use the logical
+environment `default` unless user configuration overrides it. Yuki registers a
+native runner named `local` on first server start without replacing an existing
+entry. Start its native agent and install the project environment before expecting
+the default task to run; use `celebi-runner-management` for details.
+
 ## Source of truth
 
-This revision was checked against local Celebi (base `f1c3819`) and Yuki (base
-`7f76edb`), including their uncommitted changes, on 2026-10-10.
+This revision was checked against local Celebi (HEAD `d346425`) and Yuki (HEAD
+`9303c1c`), including their uncommitted changes, on 2026-10-22.
 Prefer executable code and tests over older plans or CLI docstrings
 when they disagree. Verify the installed version with `celebi-cli --help` and
 command-specific help before using a feature absent from an older deployment.
@@ -107,8 +115,8 @@ Useful source locations in the respective repositories:
 
 - Celebi: `CelebiChrono/celebi_cli/cli.py`, `celebi_cli/commands/` under that package,
   and `CelebiChrono/kernel/vtask*.py`.
-- Yuki: `Yuki/kernel/container_job.py`, `native_workflow.py`, `ssh_workflow.py`,
-  `status_constants.py`, and `Yuki/server/routes/`.
+- Yuki: `Yuki/kernel/jobs/`, `Yuki/kernel/workflows/`, `Yuki/kernel/execution/`,
+  `Yuki/kernel/storage/`, and `Yuki/server/routes/`.
 
 ## Distinguish the requested operation
 
