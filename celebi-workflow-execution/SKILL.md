@@ -42,6 +42,14 @@ for service/worker faults rather than restarting it as part of ordinary submissi
 
 ## Monitoring and status
 
+For `subtasks: N`, Yuki expands one Task impression into N indexed Snakemake
+executions and an aggregate completion rule. Downstream Tasks and full cache
+publication wait for all instances. Use `log 0 --subtask 7` for command 0 of
+instance 7; ordinary `log` index still means command number. Successful instances
+can be preserved by Snakemake in the same workspace, but a new Celebi workflow
+may run all N again. There is no cross-workflow per-index reuse or index retry
+CLI. Do not remove failed-workflow cache fences to force a retry.
+
 Use `status` and `log INDEX` for task progress, `engine-logs` for orchestration
 failures, and `engine-logs --fetch` when a fresh backend fetch is needed.
 `status --wait` refreshes runner state until terminal completion; use

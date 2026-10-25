@@ -27,8 +27,8 @@ task; linking an algorithm does not automatically copy it.
 
 The executor substitutes values from the **task's** `parameters` mapping. Set every
 required value there, normally with `celebi-cli set-parameter events 10000`. When
-editing YAML directly, quote parameter values as strings: Yuki's substitution uses
-string replacement without coercing numbers. Algorithm `parameters` are not
+editing YAML directly, current Yuki converts numeric values to text before
+substitution; quote values for their intended shell usage. Algorithm `parameters` are not
 implicitly merged into the task.
 
 Commands are shell strings. Quote values according to their intended shell usage;
@@ -63,6 +63,14 @@ commands:
 Here the task supplies `input_file: "stageout/data.root"`. If the command instead
 uses `${input_file}` directly, the parameter must contain the full runtime path.
 The path contract depends on the command; avoid prepending the alias twice.
+
+For a consuming Task with `subtasks: N`, accept the injected `${index}` for
+indexed inputs, e.g. `toys/stageout/${index}/*.json`, and write through literal
+`stageout/index/`. The runner maps this to the Task's `stageout/<number>/`.
+Keep repetition on the Task, not the Algorithm; do not put `subtasks` or a
+user `index` default on the Algorithm to control the workflow. An algorithm
+used by ordinary and repeated tasks may accept an output-directory parameter
+whose value is `stageout/` or `stageout/index/` respectively.
 
 ## Integration and validation
 

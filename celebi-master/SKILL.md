@@ -30,6 +30,13 @@ Task commands take precedence over linked algorithm commands. A linked algorithm
 is optional for inline tasks; data tasks do not require one. Parameter substitution
 uses the task's `parameters` mapping; do not assume algorithm defaults are merged.
 
+A Task's optional `subtasks: N` repeats one definition for integer indices
+0 through N - 1, keeping one Task and one impression. Read indexed inputs with
+`${index}` and write through literal `stageout/index/`; retained outputs use
+`stageout/<number>/` in caches, collection and downstream aliases. Aliases still
+reference the entire upstream Task. Use `celebi-task-expert` for this contract
+and the generate–100 Gaussian fits–summary example.
+
 ## Choose a skill
 
 | Work | Skill |
@@ -105,8 +112,8 @@ the default task to run; use `celebi-runner-management` for details.
 
 ## Source of truth
 
-This revision was checked against local Celebi (HEAD `d346425`) and Yuki (HEAD
-`9303c1c`), including their uncommitted changes, on 2026-10-22.
+This revision was checked against local Celebi and Yuki source trees, including
+their uncommitted subtasks implementation and the 100-toy example, on 2026-10-25.
 Prefer executable code and tests over older plans or CLI docstrings
 when they disagree. Verify the installed version with `celebi-cli --help` and
 command-specific help before using a feature absent from an older deployment.

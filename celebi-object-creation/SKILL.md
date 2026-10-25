@@ -63,6 +63,12 @@ The first creates `simulation_10` through `simulation_19` and sets each task's
 `input_N` aliases. Use `remove-multi-inputs ALIAS_BASE STOP --start START` to remove
 the same alias range. A bulk invocation is limited to 10000 items.
 
+For simple repetitions of one definition, create one ordinary Task and set
+`subtasks: N` in its YAML. This retains one impression and injects `${index}`
+instead of creating N objects. Indexed inputs can use `toys/stageout/${index}/*.json`;
+instance outputs use literal `stageout/index/`, retained as `stageout/<number>/`.
+Do not invent a bulk object type or confuse repeats with `create-multi-tasks`.
+
 ## Data sources
 
 Choose the operation matching the actual location of the bytes:

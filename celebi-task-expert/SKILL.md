@@ -1,6 +1,6 @@
 ---
 name: celebi-task-expert
-description: Configure Celebi tasks with linked algorithms or inline commands, task parameters, dependency aliases, environments, and runner selection.
+description: Configure Celebi tasks with linked algorithms or inline commands, repeated execution with subtasks, indexed inputs and outputs, parameters, environments, and runners.
 ---
 
 # Configure a Celebi task
@@ -45,10 +45,36 @@ The client chooses the task directory as `code_path()` for inline commands and
 mounts it as `code/` in Docker tests/workarounds. In the checked Yuki implementation,
 `ContainerJob._create_symlink_commands()` creates `code` only for a linked algorithm,
 and `_substitute_paths()` resolves `${code}` only to that algorithm. Task commands
-win, but these runtime paths do not switch to the task. Do not promise that
+win, but these ordinary-task runtime paths do not switch to the task. Do not promise that
 `python code/script.py` accesses inline task code on every backend. Inspect the
 generated workflow/staging for the chosen backend; use a linked algorithm for
 portable source-file execution if that meets the user's task design.
+
+Repeated inline tasks with `subtasks: N` do expose task source as `code/` in Yuki;
+their workspaces and path substitution differ from ordinary inline execution.
+
+## Repeat one Task with subtasks
+
+Set `subtasks: N` in task YAML for simple repetition; keep `object_type: task`.
+N is a positive integer, and `${index}` supplies integers 0 through N - 1.
+Do not add a user `parameters.index`, create N Task directories, or generate N
+impressions for this model. `create-multi-tasks` remains a different operation.
+
+```yaml
+environment: python3.12
+subtasks: 100
+commands:
+  - python code/fit.py --index ${index} --input toys/stageout/${index}/*.json --output stageout/index
+```
+
+Use `${index}` for indexed inputs and literal `stageout/index/` for outputs.
+The runner maps the latter directly to `stageout/<number>/`; cache, collection
+and downstream aliases retain the numeric layout. An alias references the whole
+upstream Task, and downstream Tasks wait for all instances. `subtasks: 1` still
+uses `/0/`; absent `subtasks` preserves ordinary behavior.
+
+Read [references/subtasks.md](references/subtasks.md) when configuring repeats,
+adapting an algorithm's output paths, or building the 100-toy example.
 
 ## Configure the execution context
 
@@ -73,9 +99,10 @@ the corresponding aliases. Review the range first; each command permits at most
 10000 items and may leave earlier changes in place if a later item fails.
 
 Task YAML may contain `descriptor`, `environment`, `memory_limit`, `parameters`,
-inline `commands`, and an optional `lb_run` mapping. These are not an exhaustive
-schema; preserve supported backend/data fields already in use. Quote parameter
-values as strings because Yuki substitutes them directly. There is no automatic
+inline `commands`, optional `subtasks`, and an optional `lb_run` mapping. These are
+not an exhaustive schema; preserve supported backend/data fields already in use.
+Current Yuki converts numeric values to text before substitution; quote values
+according to their intended shell usage. There is no automatic
 merge of algorithm parameter defaults into the task.
 
 Algorithm-backed tasks must match a concrete algorithm environment; an algorithm

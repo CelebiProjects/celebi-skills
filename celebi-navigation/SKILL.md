@@ -45,6 +45,10 @@ Algorithms contain reusable code. Tasks either link an algorithm or carry their
 own commands. Data objects are task flavors. Read `object_type` in
 `.celebi/config.json` when identity is unclear; leave metadata mutations to the CLI.
 
+A Task declaring `subtasks: N` still appears as one Task in the containment tree,
+not N child objects. Inspect its YAML for the repeat count and its runtime
+`stageout/<number>/` and `logs/<number>/` partitions for individual executions.
+
 `tree` is the containment tree, not a substitute for inspecting dependency edges:
 
 ```bash

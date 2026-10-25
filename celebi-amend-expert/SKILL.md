@@ -34,11 +34,13 @@ metadata and dependency edges through Celebi commands.
 | Algorithm changes appear ignored | Non-empty task commands override linked algorithm commands |
 | Unsubstituted placeholder or type error | Define the value in task `parameters`; quote YAML values as strings |
 | `code/code/...` or missing source | Match paths to the real source tree and runtime code link |
-| Inline source missing at `code/...` | Check client versus Yuki path behavior; Yuki's code link still uses the linked algorithm |
+| Inline source missing at `code/...` | Ordinary inline tasks retain path differences; repeated inline tasks expose shared task source as code |
 | `Celebi lb-run error` / `lb-conda error` | Check CVMFS visibility, executable, environment form, platform compatibility, and conflicting `lb_run` settings |
 | XRootD manifest registration fails | Check SSH runner type, `xrdfs`, credentials, root URL, and checksum policy before retrying |
 | Duplicated input alias in path | Determine whether the command or parameter supplies the alias, and include it once |
 | Completed job with absent local outputs | Check `whereabouts`, runner listings, and collection selection; outputs are remote |
+| Repeated-task output missing | Code must write literal `stageout/index/`; caches and aliases use numeric `stageout/<number>/` |
+| One repeat failed or summary incomplete | Inspect `log COMMAND --subtask N`, verify input partition and expected index coverage |
 
 ## Non-obvious configuration checks
 

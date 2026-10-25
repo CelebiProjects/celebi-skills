@@ -26,6 +26,10 @@ zero-based (`celebi_user_step0.log`, etc.), not a task ID or a history offset.
 Inspect later steps for failures after the first command. `log 0 --follow
 --poll-interval 5` polls until interrupted; use a bounded session and monitor status.
 
+For repeated tasks, `log 0 --subtask 7` reads command 0 of instance 7; `--follow`
+is also supported. Logs and instance status files live in `logs/<number>/`.
+A stale running file after termination is not proof of a live process.
+
 Use `engine-logs` for workflow engine/orchestration logs and `engine-logs --fetch`
 for a fresh backend fetch. `collect-logs` requests logs into Yuki storage. A lack of
 user logs can mean the job never started; inspect engine logs and detailed status.
@@ -52,6 +56,13 @@ workflow; it does not mark the workflow successful or guarantee complete stageou
 `refresh-filelists` refreshes runner listings, useful after terminal status froze a
 listing; it does not fetch result bytes. `whereabouts` distinguishes Yuki storage
 from runner caches. Do not infer missing results from absent local `stageout/`.
+
+Repeated-task artifacts in both caches and collected storage retain
+`stageout/<number>/...`, although the code writes literal `stageout/index/...`.
+Inspect all expected indices, not only the first available result. Full cache
+publication requires all repeats to succeed; diagnostics are not a complete
+ensemble. In the Gaussian example, expect 100 `fit.json` files and 100 CSV rows,
+and distinguish analytic Gaussian ML errors from numerical optimizer convergence.
 
 ## Download and view
 

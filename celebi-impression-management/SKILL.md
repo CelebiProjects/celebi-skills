@@ -48,6 +48,12 @@ shared cache across unrelated projects. Do not commit those links or
 `.celebi/immutable-impress*` runtime files. Conflicting non-empty local and external
 stores are refused rather than merged.
 
+`subtasks: N` is frozen inside one Task impression, not N child impressions.
+Changing the repeat count changes that Task's identity; instance state and
+numbered outputs belong to its execution. Do not fabricate per-index refs or
+claim cross-workflow instance reuse. A generate–100 fits–summary example has
+three Task impressions despite 100 fit executions.
+
 ## Publish analysis bookkeeping
 
 Bookkeeping is an externally mutating Git-and-service workflow, not a synonym for

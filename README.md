@@ -51,6 +51,17 @@ Or install all skills at once:
 npx skills add CelebiProjects/celebi-skills --skill '*' -g -y
 ```
 
+To reinstall uncommitted local changes for Codex and Claude Code, use the local
+checkout rather than downloading the published repository:
+
+```bash
+npx skills add /path/to/celebi-skills --skill '*' --agent codex claude-code -g -y
+```
+
+The master skill's declared name is `celebi`, so installers may use that directory
+name even though its source folder is `celebi-master`. Back up older installations
+before replacement and avoid retaining two stale copies with the same skill name.
+
 ## About Celebi
 
 Celebi is a workflow-driven analysis management framework designed for high-energy physics and other computational domains. It abstracts complex logic into modular, reusable components with strict separation of concerns.
@@ -61,6 +72,8 @@ Celebi is a workflow-driven analysis management framework designed for high-ener
 - **Directory**: Organizational units for grouping objects, including nested directories
 - **Algorithm**: Stateless, reusable template for computation ("The How")
 - **Task**: Execution context using a linked algorithm or its own inline commands
+- **Subtasks**: Optional positive repeat count on one Task, with an injected index
+  and one shared impression; retained outputs are `stageout/<number>/...`
 - **Data**: A task flavor representing raw data or a data list
 - **Yuki**: Service coordinating runners, logs, result collection, and data caches
 
@@ -95,12 +108,15 @@ celebi-cli collect plots
 celebi-cli view-url
 ```
 
-The skills reflect the local Celebi and Yuki source trees reviewed on 2026-10-22,
+The skills reflect the local Celebi and Yuki source trees reviewed on 2026-10-25,
 including their uncommitted changes. The master folder retains its existing skill
 name `celebi`; the other skill names match their folders. Companion skills are
 optional and can be installed individually. Check the installed CLI's command-specific
 help when working against an older deployment. The task skill documents the
 current inline-code path differences between client tests and Yuki execution.
+The task skill's `references/subtasks.md` covers indexed inputs, literal
+`stageout/index/` instance outputs, logs, cache publication and retry limits,
+including `Demo/demo-subtasks-01-gaussian-toys` (three Tasks, 100 fits).
 The service and impression skills also cover the built-in local runner, immutable
 impressions, bookkeeping publication, and implemented cleanup behavior.
 
